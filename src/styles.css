@@ -1,5 +1,9 @@
-﻿/* Tailwind is loaded from the CDN in index.html (same as the original app),
-   so this file only holds the few global rules the app relies on. */
+/* Tailwind is compiled into this stylesheet at build time.
+   Utility class names are scanned out of the templates and TS files
+   listed in tailwind.config.js. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 html,
 body {

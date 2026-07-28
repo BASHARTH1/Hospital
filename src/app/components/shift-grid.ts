@@ -61,6 +61,20 @@ interface ActiveCell {
   shouldFlip: boolean;
 }
 
+/**
+ * Drops any `ring-*` utility baked into a theme swatch.
+ *
+ * "Requested" shifts get an explicit red inset ring from the template. Leaving the
+ * theme's own ring on the element too would put two competing `ring` utilities on one
+ * node, and which one wins depends purely on their order in the compiled stylesheet.
+ */
+function stripRings(classes: string): string {
+  return classes
+    .replace(/\bring-\S+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const MORNING_SHIFTS = [
   ShiftType.Morning,
   ShiftType.RequestedMorning,
@@ -166,11 +180,13 @@ export class ShiftGrid {
         else if (shift === ShiftType.RequestedOff) displayValue = 'W';
         else if (shift === ShiftType.None) displayValue = '·';
 
+        const isRequested = shift.startsWith('R');
+
         return {
           dateStr: d.dateStr,
           shift,
           displayValue,
-          classes: `shift-cell-${shift} ${style.bg} ${style.color}`,
+          classes: `shift-cell-${shift} ${isRequested ? stripRings(style.bg) : style.bg} ${style.color}`,
           isContext: d.isContext,
           isDivider: d.isDivider,
           isRequested: shift.startsWith('R'),
@@ -302,6 +318,7 @@ export class ShiftGrid {
   readonly subFooterRowClass = computed(() =>
     this.isNight() ? 'bg-[#0d1117] text-slate-400' : 'bg-slate-50 text-slate-900',
   );
+  /** Owns the legend box's corner radius outright — the template must not add one too. */
   readonly legendBoxClass = computed(() => {
     switch (this.theme()) {
       case 'Attractive':
@@ -311,7 +328,7 @@ export class ShiftGrid {
       case 'Day':
         return 'bg-amber-50/50 border-amber-100 rounded-3xl';
       default:
-        return 'bg-slate-50 border-gray-100';
+        return 'bg-slate-50 border-gray-100 rounded-xl';
     }
   });
 
@@ -319,6 +336,21 @@ export class ShiftGrid {
     const key = shift as string;
     if (!key.startsWith('R')) return key;
     return key === 'RW' ? 'W' : key.charAt(1);
+  }
+
+  /** Legend swatch colours, with the theme's own ring removed for requested shifts. */
+  legendSwatchClass(key: ShiftType): string {
+    const details = this.shiftDetails()[key];
+    const bg = key.startsWith('R') ? stripRings(details.bg) : details.bg;
+    return `${bg} ${details.color}`;
+  }
+
+  /** The colour of a day-header number. Exactly one class, so order cannot decide it. */
+  dayNumberColor(d: DayInfo): string {
+    if (d.isHoliday) return 'text-rose-600';
+    if (d.isWeekend) return 'text-amber-600';
+    if (d.isContext) return 'text-gray-400';
+    return this.textPrimary();
   }
 
   // ---- Interaction ----

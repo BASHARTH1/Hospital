@@ -21,12 +21,7 @@
               [class]="d.isDivider ? dividerClass() : ''"
               [title]="d.isHoliday ? 'Public Holiday' : d.isWeekend ? 'Weekend' : 'Weekday'"
             >
-              <div
-                class="font-black"
-                [class]="d.isContext ? 'text-gray-400' : textPrimary()"
-                [class.text-rose-600]="d.isHoliday"
-                [class.text-amber-600]="!d.isHoliday && d.isWeekend"
-              >
+              <div class="font-black" [class]="dayNumberColor(d)">
                 {{ d.day }}
                 @if (d.isHoliday) {
                   <span class="absolute top-0.5 right-0.5 w-1 h-1 bg-rose-500 rounded-full"></span>
@@ -376,7 +371,7 @@
     }
   }
 
-  <div class="p-4 rounded-xl border shadow-sm no-print transition-all duration-700" [class]="legendBoxClass()">
+  <div class="p-4 border shadow-sm no-print transition-all duration-700" [class]="legendBoxClass()">
     <h4 class="font-black text-slate-400 mb-2 text-[8px] uppercase tracking-widest flex items-center gap-2">
       <div class="w-1.5 h-1.5 rounded-full animate-pulse" [class]="isNight() ? 'bg-cyan-400' : 'bg-blue-500'"></div>
       Shift Legend ({{ theme() }})
@@ -387,7 +382,7 @@
           <div class="flex items-center gap-2 text-[8px]">
             <div
               class="w-6 h-4 flex items-center justify-center rounded shadow-sm font-black text-[7px]"
-              [class]="shiftDetails()[key].bg + ' ' + shiftDetails()[key].color"
+              [class]="legendSwatchClass(key)"
               [class.ring-1]="key.startsWith('R')"
               [class.ring-red-500]="key.startsWith('R')"
               [class.ring-inset]="key.startsWith('R')"

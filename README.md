@@ -69,9 +69,13 @@ top of the real assignments — exactly what the React `useMemo` did.
 
 ## Notable porting decisions
 
-- **Tailwind** is still loaded from the CDN (`index.html`), as in the original. Theme
-  classes are assembled at runtime from string maps, which the CDN's JIT handles. If you
-  later switch to a compiled Tailwind build, those dynamic class strings need safelisting.
+- **Tailwind is compiled at build time** (v3.4, matching what the original loaded from the
+  Play CDN) rather than pulled from `cdn.tailwindcss.com`. `tailwind.config.js` scans
+  `src/**/*.{html,ts}` — the theme maps (`THEME_SHIFT_STYLES`, the per-view `THEME_CONFIGS`,
+  the class helpers on each component) are plain string literals, so the extractor finds
+  them without a safelist. It does apply one `transform`, to unwrap Angular's
+  `[class.bg-rose-950/30]="expr"` bindings, which the default extractor would otherwise
+  read as a single unusable token.
 - **`lucide-react` was dropped.** `src/app/ui/icon.ts` renders the same 17 glyphs as
   inline SVG, so there is no icon dependency.
 - **`motion` was dropped** — the original imported it in `StaffCardsView` but never used it.
