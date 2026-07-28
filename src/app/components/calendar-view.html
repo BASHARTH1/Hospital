@@ -1,0 +1,144 @@
+@switch (viewMode()) {
+  @case ('cards') {
+    <app-staff-cards-view
+      [staff]="staff()"
+      [config]="config()"
+      [assignments]="assignments()"
+      [appTheme]="theme()"
+      (back)="setViewMode('table')"
+    />
+  }
+  @case ('daily') {
+    <app-daily-assignments-print-view
+      [staff]="staff()"
+      [config]="config()"
+      [assignments]="assignments()"
+      (back)="setViewMode('table')"
+    />
+  }
+  @case ('oncall') {
+    <app-on-call-print-view
+      [staff]="staff()"
+      [config]="config()"
+      [assignments]="assignments()"
+      (back)="setViewMode('table')"
+    />
+  }
+  @default {
+    <div class="space-y-6" id="print-root">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+          <div>
+            <h2 class="text-xl font-semibold flex items-center gap-2 text-gray-800">
+              <app-icon name="CalendarIcon" [size]="20" class="text-gray-400" />
+              {{ config().wardName ? config().wardName + ' - ' : '' }}{{ config().month }} {{ config().year }}
+            </h2>
+            <p class="text-sm text-gray-500">Final duty rota for all staff</p>
+          </div>
+
+          <!-- Quick ward name selector -->
+          <div class="flex flex-col min-w-[180px] max-w-xs self-start">
+            <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Ward Name</label>
+            <input
+              type="text"
+              [value]="config().wardName || ''"
+              (input)="onWardNameChange($any($event.target).value)"
+              placeholder="Change Ward Name..."
+              class="w-full px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+            />
+          </div>
+
+          <!-- Roster view mode toggle -->
+          <div class="flex p-0.5 bg-gray-100 rounded-xl border border-gray-200 shadow-sm ml-0 sm:ml-4 self-start">
+            <button
+              type="button"
+              (click)="setViewMode('table')"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
+              [class]="viewMode() === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              <app-icon name="CalendarIcon" [size]="14" />
+              Table Grid
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('cards')"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
+              [class]="viewMode() === 'cards' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              <app-icon name="Plus" [size]="14" class="rotate-45" />
+              Staff Duty Cards
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('daily')"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
+              [class]="viewMode() === 'daily' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              <app-icon name="Save" [size]="14" />
+              Daily Sheet
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('oncall')"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
+              [class]="viewMode() === 'oncall' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              <app-icon name="Users" [size]="14" />
+              On-Call List
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 w-full sm:w-auto self-end">
+          <button
+            type="button"
+            (click)="exportCsv.emit()"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-bold text-sm shadow-sm"
+          >
+            <app-icon name="Download" [size]="18" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            (click)="print()"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition font-bold text-sm shadow-md"
+          >
+            <app-icon name="Printer" [size]="18" />
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="hidden print:block mb-4 text-center">
+        @if (config().wardName) {
+          <h2 class="text-lg font-black uppercase tracking-widest text-gray-700 mb-0.5">{{ config().wardName }}</h2>
+        }
+        <h1 class="text-2xl font-black uppercase tracking-widest">
+          {{ config().month }} {{ config().year }} DUTY ROSTER
+        </h1>
+        <p class="text-[10px] text-gray-500 font-bold uppercase mt-1">Generated by AI Staff Manager</p>
+      </div>
+
+      <app-shift-grid
+        [staff]="staff()"
+        [config]="config()"
+        [assignments]="assignments()"
+        [readOnly]="true"
+        [hideContextDays]="true"
+        [theme]="theme()"
+      />
+
+      <div class="hidden print:block mt-8 border-t border-slate-300 pt-4">
+        <div class="flex justify-between items-end">
+          <div class="space-y-4">
+            <div class="w-48 h-px bg-slate-400 mb-1"></div>
+            <p class="text-[10px] font-bold uppercase text-slate-500">Department Head Signature</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Printed on {{ printedOn }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+}

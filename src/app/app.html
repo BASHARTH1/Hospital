@@ -1,0 +1,118 @@
+<div
+  class="w-full min-h-screen max-w-[100vw] mx-auto px-2 sm:px-4 py-8 overflow-x-hidden transition-all duration-500 print:bg-white print:text-black print:p-0 print:m-0 print:min-h-0"
+  [class]="themeClasses()"
+>
+  <header class="flex flex-col items-center mb-8 no-print gap-4">
+    <div class="text-center">
+      <h1 class="text-4xl font-black mb-2 tracking-tight transition-all duration-500" [class]="titleClass()">
+        AI Staff Roster Manager
+      </h1>
+      <p class="font-medium" [class]="isNight() ? 'text-slate-500' : 'text-gray-500'">
+        Intelligent duty scheduling for 3-shift operations
+      </p>
+    </div>
+
+    <!-- Theme selector -->
+    <div
+      class="flex p-1 rounded-full items-center gap-1 border transition-colors duration-500"
+      [class]="isNight() ? 'bg-slate-800 border-slate-700' : 'bg-gray-200/50 border-gray-200'"
+    >
+      <div class="px-3 py-1 text-[10px] font-black uppercase text-gray-400">Theme:</div>
+      @for (t of themes; track t) {
+        <button
+          type="button"
+          (click)="store.setTheme(t)"
+          class="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
+          [class]="
+            store.theme() === t
+              ? isNight()
+                ? 'bg-slate-700 text-cyan-400 shadow-sm'
+                : 'bg-white text-blue-600 shadow-sm'
+              : isNight()
+                ? 'text-slate-500 hover:text-slate-300'
+                : 'text-gray-500 hover:text-gray-700'
+          "
+        >
+          {{ t }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <nav class="flex justify-center mb-8 no-print">
+    <div class="p-1 flex space-x-1 w-full xl:w-5/6 transition-all duration-500" [class]="navBarClass()">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          (click)="store.setActiveTab(tab.id)"
+          class="flex-1 flex items-center justify-center gap-2 py-2.5 px-1 sm:px-4 transition-all text-xs sm:text-sm"
+          [class]="tabShapeClass() + ' ' + (store.activeTab() === tab.id ? activeTabClass() : inactiveTabClass())"
+        >
+          <app-icon [name]="tab.icon" [size]="18" />
+          <span class="hidden sm:inline">{{ tab.label }}</span>
+        </button>
+      }
+    </div>
+  </nav>
+
+  <main
+    class="min-h-[600px] w-full mx-auto transition-all duration-700 print:bg-transparent print:shadow-none print:border-none print:p-0 print:min-h-0"
+    [class]="containerClasses()"
+  >
+    @switch (store.activeTab()) {
+      @case ('Staff') {
+        <app-staff-manager
+          [staff]="store.staff()"
+          [config]="store.config()"
+          [theme]="store.theme()"
+          (add)="store.addStaff()"
+          (addHa)="store.addHaStaff()"
+          (addCounterPart)="store.addCounterPartStaff()"
+          (updateMember)="store.updateStaff($event.id, $event.updates)"
+          (removeMultiple)="store.removeMultipleStaff($event)"
+          (exportCsv)="store.exportStaff()"
+          (importCsv)="store.importStaff($event)"
+        />
+      }
+      @case ('Rules') {
+        <app-rules-manager
+          [config]="store.config()"
+          [staff]="store.staff()"
+          [assignments]="store.resolvedAssignments()"
+          (configChange)="store.setConfig($event)"
+        />
+      }
+      @case ('Manual') {
+        <app-manual-entry
+          [staff]="store.staff()"
+          [config]="store.config()"
+          [assignments]="store.resolvedAssignments()"
+          [theme]="store.theme()"
+          (updateAssignment)="store.updateAssignment($event.staffId, $event.date, $event.shift)"
+          (updateBatch)="store.updateAssignmentsBatch($event)"
+          (exportCsv)="store.exportAssignments()"
+          (importCsv)="store.importAssignments($event)"
+        />
+      }
+      @case ('Generate') {
+        <app-generator
+          [staff]="store.staff()"
+          [config]="store.config()"
+          [assignments]="store.assignments()"
+          (generated)="store.setAssignments($event)"
+          (completed)="store.setActiveTab('Calendar')"
+        />
+      }
+      @case ('Calendar') {
+        <app-calendar-view
+          [staff]="store.staff()"
+          [config]="store.config()"
+          [assignments]="store.resolvedAssignments()"
+          [theme]="store.theme()"
+          (exportCsv)="store.exportAssignments()"
+          (configChange)="store.setConfig($event)"
+        />
+      }
+    }
+  </main>
+</div>

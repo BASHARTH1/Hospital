@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AI Staff Roster Manager</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 5mm;
+        }
+        body {
+          background: white !important;
+          color: black !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+        app-root {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: none !important;
+        }
+        /* Ensure the roster takes full width and scales appropriately */
+        #print-root {
+          width: 100% !important;
+          display: block !important;
+        }
+        table {
+          width: 100% !important;
+          table-layout: fixed !important;
+          border-collapse: collapse !important;
+          font-size: 7px !important; /* Extremely compact for A4 Landscape */
+        }
+        th,
+        td {
+          border: 0.5pt solid #cbd5e1 !important;
+          padding: 2px 1px !important;
+          height: auto !important;
+        }
+        .sticky {
+          position: static !important;
+        }
+
+        /* Clean print aesthetics for ShiftGrid headers and personnel */
+        .print-header-personnel {
+          background-color: #f1f5f9 !important; /* Slate-100 */
+          color: #0f172a !important; /* Slate-900 */
+          font-weight: 900 !important;
+        }
+        .print-cell-personnel {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          font-weight: 800 !important;
+        }
+        .print-header-day {
+          background-color: #f8fafc !important;
+          color: #0f172a !important;
+        }
+
+        /* Fix background colors in print with clean contrast */
+        .bg-green-600 {
+          background-color: #16a34a !important;
+        }
+        .bg-blue-500 {
+          background-color: #3b82f6 !important;
+        }
+        .bg-indigo-900 {
+          background-color: #1e1b4b !important;
+        }
+        .bg-red-400 {
+          background-color: #f87171 !important;
+        }
+        .bg-gray-100 {
+          background-color: #f3f4f6 !important;
+        }
+
+        /* Specific high-contrast, ink-friendly print styling for shifts in the grid */
+        .shift-cell-M,
+        .shift-cell-RM {
+          background-color: #f1f5f9 !important; /* Slate-100 */
+          color: #0f172a !important; /* Slate-900 */
+        }
+        .shift-cell-E,
+        .shift-cell-RE {
+          background-color: #dbeafe !important; /* Light Blue-100 */
+          color: #1e40af !important; /* Blue-800 */
+        }
+        .shift-cell-N,
+        .shift-cell-RN {
+          background-color: #e2e8f0 !important; /* Slate-200 */
+          color: #0f172a !important; /* Slate-900 */
+        }
+        .shift-cell-Off,
+        .shift-cell-W,
+        .shift-cell-RW {
+          background-color: #ffffff !important;
+          color: #475569 !important; /* Slate-600 */
+        }
+        .shift-cell-L {
+          background-color: #fee2e2 !important; /* Light Red-100 */
+          color: #991b1b !important; /* Red-800 */
+        }
+        .shift-cell-H {
+          background-color: #fef3c7 !important; /* Light Amber-100 */
+          color: #92400e !important; /* Amber-800 */
+        }
+        .shift-cell-MS {
+          background-color: #f1f5f9 !important;
+          color: #334155 !important;
+        }
+        .shift-cell-MO,
+        .shift-cell-EO,
+        .shift-cell-NO {
+          background-color: #fef3c7 !important;
+          color: #b45309 !important;
+        }
+
+        /* Totals rows styling in print */
+        .print-total-row-M {
+          background-color: #f1f5f9 !important;
+          color: #0f172a !important;
+        }
+        .print-total-row-E {
+          background-color: #dbeafe !important;
+          color: #1e40af !important;
+        }
+        .print-total-row-N {
+          background-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900 min-h-screen">
+    <app-root></app-root>
+  </body>
+</html>

@@ -1,0 +1,315 @@
+<div
+  class="w-full border-2 bg-white text-black font-sans select-none text-[11px] sm:text-[12px] overflow-hidden flex flex-col md:flex-row print:flex-row print:text-[10px]"
+  [class]="themeStyles().borderColor"
+>
+  <!-- 1. Date column -->
+  <div
+    class="w-full md:w-[8%] print:w-[8%] flex flex-col justify-center items-center p-2 text-center border-b md:border-b-0 md:border-r bg-white"
+    [class]="themeStyles().borderColor"
+  >
+    @if (config().wardName) {
+      <span class="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1 text-center truncate max-w-full">
+        {{ config().wardName }}
+      </span>
+    }
+    <span class="text-[10px] font-black uppercase tracking-tight text-gray-500">Date</span>
+    <span class="text-3xl font-black leading-none my-1" [class]="themeStyles().accentText">{{ dayNum() }}</span>
+    <span class="text-[10px] font-bold text-gray-700 leading-tight">{{ shortMonthName() }}, {{ config().year }}</span>
+    <span class="text-[11px] font-black underline tracking-tight uppercase mt-2" [class]="themeStyles().accentText">
+      {{ weekdayShort() }}day
+    </span>
+  </div>
+
+  <!-- 2. Roster columns: Morning, Evening, Night -->
+  <div
+    class="w-full md:w-[67%] print:w-[67%] grid grid-cols-[1.7fr_0.8fr_1.7fr_0.8fr_1.7fr_0.8fr] border-b md:border-b-0 md:border-r"
+    [class]="themeStyles().borderColor"
+  >
+    <div
+      class="font-black border-b border-r text-center py-1.5 uppercase text-[11px] sm:text-[12px] print:text-[10px] tracking-tight print-color-morning"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      Morning
+    </div>
+    <div
+      class="font-semibold border-b border-r text-center py-1.5 uppercase text-[8px] sm:text-[9px] print:text-[7.5px] tracking-tight text-gray-500/90 print-color-morning"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      (Assignment)
+    </div>
+    <div
+      class="font-black border-b border-r text-center py-1.5 uppercase text-[11px] sm:text-[12px] print:text-[10px] tracking-tight print-color-evening"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      Evening
+    </div>
+    <div
+      class="font-semibold border-b border-r text-center py-1.5 uppercase text-[8px] sm:text-[9px] print:text-[7.5px] tracking-tight text-gray-500/90 print-color-evening"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      (Assignment)
+    </div>
+    <div
+      class="font-black border-b border-r text-center py-1.5 uppercase text-[11px] sm:text-[12px] print:text-[10px] tracking-tight print-color-night"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      Night
+    </div>
+    <div
+      class="font-semibold border-b text-center py-1.5 uppercase text-[8px] sm:text-[9px] print:text-[7.5px] tracking-tight text-gray-500/90 print-color-night"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      (Assignment)
+    </div>
+
+    @for (row of rosterRows(); track row.index) {
+      <!-- Morning personnel -->
+      <div
+        class="p-1.5 font-bold border-r min-h-[28px] sm:min-h-[32px] py-1 flex items-center justify-start overflow-hidden print-color-morning"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.m?.isFirstHa"
+        [class.border-t-emerald-600]="row.m?.isFirstHa"
+        [class.bg-emerald-50/5]="row.m?.isFirstHa"
+      >
+        @if (row.m; as person) {
+          <ng-container *ngTemplateOutlet="staffName; context: { $implicit: person }" />
+        }
+      </div>
+      <div
+        class="p-1 border-r min-h-[28px] sm:min-h-[32px] py-1 bg-transparent print-color-morning"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.m?.isFirstHa"
+        [class.border-t-emerald-600]="row.m?.isFirstHa"
+      ></div>
+
+      <!-- Evening personnel -->
+      <div
+        class="p-1.5 font-bold border-r min-h-[28px] sm:min-h-[32px] py-1 flex items-center justify-start overflow-hidden print-color-evening"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.e?.isFirstHa"
+        [class.border-t-emerald-600]="row.e?.isFirstHa"
+        [class.bg-emerald-50/5]="row.e?.isFirstHa"
+      >
+        @if (row.e; as person) {
+          <ng-container *ngTemplateOutlet="staffName; context: { $implicit: person }" />
+        }
+      </div>
+      <div
+        class="p-1 border-r min-h-[28px] sm:min-h-[32px] py-1 bg-transparent print-color-evening"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.e?.isFirstHa"
+        [class.border-t-emerald-600]="row.e?.isFirstHa"
+      ></div>
+
+      <!-- Night personnel -->
+      <div
+        class="p-1.5 font-bold border-r min-h-[28px] sm:min-h-[32px] py-1 flex items-center justify-start overflow-hidden print-color-night"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.n?.isFirstHa"
+        [class.border-t-emerald-600]="row.n?.isFirstHa"
+        [class.bg-emerald-50/5]="row.n?.isFirstHa"
+      >
+        @if (row.n; as person) {
+          <ng-container *ngTemplateOutlet="staffName; context: { $implicit: person }" />
+        }
+      </div>
+      <div
+        class="p-1 min-h-[28px] sm:min-h-[32px] py-1 bg-transparent print-color-night"
+        [class]="themeStyles().borderColor"
+        [class.border-b]="!row.isLastRow"
+        [class.border-t-2]="row.n?.isFirstHa"
+        [class.border-t-emerald-600]="row.n?.isFirstHa"
+      ></div>
+    }
+  </div>
+
+  <!-- 3. Workshop, training & on-calls column -->
+  <div class="w-full md:w-[25%] print:w-[25%] flex flex-col justify-between bg-white">
+    <div
+      class="font-black border-b text-center py-1.5 uppercase text-[10px] tracking-tight print-color-workshop"
+      [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+    >
+      [Workshop / Training / Special Assignment]
+    </div>
+
+    <div class="border-b flex-grow min-h-[60px] max-h-[110px] overflow-y-auto bg-white" [class]="themeStyles().borderColor">
+      <table class="w-full text-left text-[9px] border-collapse">
+        <thead>
+          <tr
+            class="border-b font-black text-[7.5px] sm:text-[8px] uppercase tracking-tight print-color-workshop"
+            [class]="themeStyles().subHeaderBg + ' ' + themeStyles().borderColor"
+          >
+            <th class="px-1 py-0.5 border-r text-center w-5" [class]="themeStyles().borderColor">#</th>
+            <th class="px-1 py-0.5">Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (workshopStaff().length === 0) {
+            <tr>
+              <td colspan="2" class="text-center py-4 text-[9px] text-gray-400 italic font-medium print-color-workshop">
+                No special assignments
+              </td>
+            </tr>
+          } @else {
+            @for (w of workshopStaff(); track w.id) {
+              <tr class="border-b border-black/10 last:border-0">
+                <td
+                  class="px-1 py-0.5 border-r text-center font-black text-gray-500"
+                  [class]="themeStyles().borderColor + ' ' + themeStyles().bgTint"
+                >
+                  {{ w.position }}
+                </td>
+                <td class="px-1.5 py-0.5 font-bold max-w-[120px] overflow-hidden print-color-workshop">
+                  <div class="flex flex-col items-start overflow-hidden leading-tight py-0.5 w-full">
+                    <span class="truncate block staff-name-text">
+                      @if (w.isSenior) {
+                        <span class="font-black mr-1" [class]="themeStyles().accentText">[S]</span>
+                      }
+                      {{ w.name }}
+                      @if (w.isSpecial) {
+                        <span class="text-[7.5px] font-bold ml-1 tracking-tight" [class]="themeStyles().accentText"
+                          >(1S)</span
+                        >
+                      }
+                    </span>
+                    @for (cp of w.counterparts; track cp.id) {
+                      <span
+                        class="text-[7px] text-violet-600 font-extrabold bg-violet-50/75 border border-violet-100/90 px-1 rounded mt-0.5 block whitespace-nowrap"
+                        >+{{ cp.name }}</span
+                      >
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Free-text agenda / notes -->
+    <div class="flex flex-col border-b text-[10px] flex-grow min-h-[140px] bg-white" [class]="themeStyles().borderColor">
+      <div
+        class="border-b px-1.5 py-0.5 flex justify-between items-center text-[7.5px] font-black uppercase tracking-tight print-color-notes"
+        [class]="themeStyles().subHeaderBg + ' ' + themeStyles().borderColor"
+      >
+        <span>Agenda &amp; Notes</span>
+        <span class="px-1 rounded-sm text-[6.5px]" [class]="themeStyles().badgeBg + ' ' + themeStyles().badgeText"
+          >FREE-TEXT</span
+        >
+      </div>
+      <div class="flex-grow flex flex-col p-1.5 min-h-[120px]">
+        @if (isPrint()) {
+          <div
+            class="w-full flex-grow text-[9px] font-semibold whitespace-pre-wrap leading-tight text-gray-800 break-words p-0.5 print-color-notes notes-print-content"
+          >
+            @if (notes()) {
+              {{ notes() }}
+            } @else {
+              <span class="text-gray-300 italic">No workshops or training notes scheduled.</span>
+            }
+          </div>
+        } @else {
+          <textarea
+            placeholder="Type any workshop topic, times, locations, speakers, or free-form training notes here..."
+            [value]="notes()"
+            (input)="onNotesInput($event)"
+            class="w-full flex-grow text-[9px] font-semibold bg-transparent border-none outline-none resize-none leading-tight placeholder:text-gray-300 placeholder:italic placeholder:font-normal focus:bg-blue-50/30 p-0.5 h-full print-color-notes"
+          ></textarea>
+        }
+      </div>
+    </div>
+
+    <!-- On-call sub-grid -->
+    <div
+      class="grid grid-cols-3 border-t text-[8px] sm:text-[9px] min-h-[56px] sm:min-h-[64px] pb-1 bg-white"
+      [class]="themeStyles().borderColor"
+    >
+      <div class="flex flex-col border-r" [class]="themeStyles().borderColor">
+        <div
+          class="font-black text-center py-0.5 border-b uppercase tracking-tighter truncate px-0.5 print-color-oncall"
+          [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+        >
+          [Morning Oncall]
+        </div>
+        <div class="flex-grow p-1 font-bold flex flex-col justify-start overflow-hidden leading-tight text-center gap-1.5">
+          @for (s of morningOncalls(); track s.id) {
+            <ng-container *ngTemplateOutlet="oncallName; context: { $implicit: s }" />
+          }
+        </div>
+      </div>
+
+      <div class="flex flex-col border-r" [class]="themeStyles().borderColor">
+        <div
+          class="font-black text-center py-0.5 border-b uppercase tracking-tighter truncate px-0.5 print-color-oncall"
+          [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+        >
+          [Evening Oncall]
+        </div>
+        <div class="flex-grow p-1 font-bold flex flex-col justify-start overflow-hidden leading-tight text-center gap-1.5">
+          @for (s of eveningOncalls(); track s.id) {
+            <ng-container *ngTemplateOutlet="oncallName; context: { $implicit: s }" />
+          }
+        </div>
+      </div>
+
+      <div class="flex flex-col">
+        <div
+          class="font-black text-center py-0.5 border-b uppercase tracking-tighter truncate px-0.5 print-color-oncall"
+          [class]="themeStyles().headerBg + ' ' + themeStyles().borderColor"
+        >
+          [Night Oncall]
+        </div>
+        <div class="flex-grow p-1 font-bold flex flex-col justify-start overflow-hidden leading-tight text-center gap-1.5">
+          @for (s of nightOncalls(); track s.id) {
+            <ng-container *ngTemplateOutlet="oncallName; context: { $implicit: s }" />
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #staffName let-person>
+  <div class="flex flex-col items-start leading-tight max-w-full overflow-hidden w-full">
+    <span
+      class="truncate block font-extrabold staff-name-text flex items-center gap-1 text-[13px] sm:text-[14px] print:text-[11.5px]"
+      [class]="person.isHa ? 'text-emerald-800' : 'text-gray-900'"
+    >
+      @if (person.isSenior && !person.isHa) {
+        <span class="font-black mr-1" [class]="themeStyles().accentText">S</span>
+      }
+      {{ person.name }}
+      @if (person.isHa) {
+        <span
+          class="text-[8px] print:text-[7px] font-black bg-emerald-100 text-emerald-800 px-1 rounded-md border border-emerald-200 uppercase tracking-wide scale-90 origin-left inline-block"
+          >HA</span
+        >
+      }
+    </span>
+    @for (cp of person.counterparts; track cp.id) {
+      <span
+        class="text-[8.5px] print:text-[8px] text-violet-600 font-extrabold normal-case bg-violet-50/75 border border-violet-100/90 px-1 py-0.5 rounded mt-0.5 block truncate max-w-full"
+        [title]="'Counterpart: ' + cp.name"
+        >+{{ cp.name }}</span
+      >
+    }
+  </div>
+</ng-template>
+
+<ng-template #oncallName let-person>
+  <div class="flex flex-col items-center justify-center text-[8px] leading-tight print-color-oncall">
+    <span class="truncate staff-name-text">{{ person.name }}</span>
+    @for (cp of person.counterparts; track cp.id) {
+      <span
+        class="text-[7px] text-violet-600 font-extrabold bg-violet-50/75 border border-violet-100/90 px-0.5 rounded whitespace-nowrap mt-0.5"
+        >+{{ cp.name }}</span
+      >
+    }
+  </div>
+</ng-template>

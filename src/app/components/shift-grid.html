@@ -1,0 +1,405 @@
+<div class="space-y-4 relative w-full">
+  <div class="overflow-x-auto border w-full transition-all duration-700" [class]="tableClass()">
+    <table class="w-full text-[9px] border-collapse table-fixed select-none print:text-[7px]">
+      <thead>
+        <tr class="border-b border-gray-200/20 print:bg-slate-100" [class]="headerBg()">
+          <th
+            class="sticky left-0 z-30 p-2 border-r border-gray-200/20 w-32 sm:w-40 font-black text-slate-500 uppercase tracking-tighter text-left print:static print:w-24 print-header-personnel"
+            [class]="headerBg()"
+          >
+            Personnel
+          </th>
+          @for (d of allVisibleDays(); track d.dateStr) {
+            <th
+              class="p-1 border-r border-gray-200/20 min-w-[24px] text-center relative print-header-day"
+              [class.bg-rose-950/30]="d.isHoliday && isNight()"
+              [class.bg-rose-50/80]="d.isHoliday && !isNight()"
+              [class.bg-amber-950/20]="!d.isHoliday && d.isWeekend && isNight()"
+              [class.bg-amber-50]="!d.isHoliday && d.isWeekend && !isNight()"
+              [class.bg-slate-800/50]="d.isContext && isNight()"
+              [class.bg-slate-100/50]="d.isContext && !isNight()"
+              [class]="d.isDivider ? dividerClass() : ''"
+              [title]="d.isHoliday ? 'Public Holiday' : d.isWeekend ? 'Weekend' : 'Weekday'"
+            >
+              <div
+                class="font-black"
+                [class]="d.isContext ? 'text-gray-400' : textPrimary()"
+                [class.text-rose-600]="d.isHoliday"
+                [class.text-amber-600]="!d.isHoliday && d.isWeekend"
+              >
+                {{ d.day }}
+                @if (d.isHoliday) {
+                  <span class="absolute top-0.5 right-0.5 w-1 h-1 bg-rose-500 rounded-full"></span>
+                }
+              </div>
+              <div
+                class="text-[5px] font-bold uppercase print:text-[4px]"
+                [class]="d.isHoliday ? 'text-rose-500' : d.isWeekend ? 'text-amber-500' : 'text-gray-400'"
+              >
+                {{ d.dayName }}
+              </div>
+            </th>
+          }
+          <th
+            class="p-1 border-r border-gray-200/20 font-black w-6 text-emerald-600"
+            [class]="isNight() ? 'bg-emerald-950/30' : 'bg-emerald-100'"
+          >
+            M
+          </th>
+          <th
+            class="p-1 border-r border-gray-200/20 font-black w-6 text-blue-600"
+            [class]="isNight() ? 'bg-blue-950/30' : 'bg-blue-100'"
+          >
+            E
+          </th>
+          <th
+            class="p-1 border-r border-gray-200/20 font-black w-6 text-indigo-400"
+            [class]="isNight() ? 'bg-indigo-950/30' : 'bg-indigo-100'"
+          >
+            N
+          </th>
+          <th
+            class="p-1 border-r border-gray-200/20 font-black w-6 text-gray-500"
+            [class]="isNight() ? 'bg-slate-800' : 'bg-gray-200'"
+          >
+            W
+          </th>
+          <th
+            class="p-1 border-r border-gray-200/20 font-black w-6 text-red-500"
+            [class]="isNight() ? 'bg-red-950/30' : 'bg-red-100'"
+          >
+            L
+          </th>
+          <th class="p-1 font-black w-6 text-rose-500" [class]="isNight() ? 'bg-rose-950/30' : 'bg-rose-100'">H</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y" [class]="isNight() ? 'divide-slate-800' : 'divide-gray-100'">
+        @for (row of rows(); track row.member.id) {
+          <tr class="group transition-colors" [class]="row.isCP ? cpRowClass() : rowHoverClass()">
+            <td
+              class="sticky left-0 z-10 p-2 border-r border-gray-200/20 font-black truncate text-[9px] print:static print:text-[7px] print-cell-personnel"
+              [class]="row.isCP ? stickyCpCellBg() : stickyCellBg()"
+            >
+              <span class="text-slate-300 font-mono mr-1 print:hidden">{{ row.member.id }}</span>
+              <span
+                [class]="
+                  row.isHa
+                    ? isNight()
+                      ? 'text-emerald-400 font-bold'
+                      : 'text-emerald-800 font-black'
+                    : isNight()
+                      ? 'text-slate-300'
+                      : 'text-slate-700'
+                "
+              >
+                {{ row.member.name || 'UNNAMED' }}
+                @if (row.isCP) {
+                  <span
+                    class="text-[7px] text-violet-500 font-black ml-1 uppercase tracking-tighter"
+                    title="Counterpart Staff"
+                    >(CP)</span
+                  >
+                }
+              </span>
+            </td>
+
+            @for (cell of row.cells; track cell.dateStr) {
+              <td
+                (click)="onCellClick($event, row, cell)"
+                class="p-1 border-r border-gray-200/10 text-center transition-all h-8 print:h-6 font-black text-[10px] print:text-[8px]"
+                [class]="cell.classes"
+                [class.ring-2]="
+                  cell.isRequested ||
+                  (activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr)
+                "
+                [class.ring-blue-500]="
+                  activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr
+                "
+                [class.z-20]="activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr"
+                [class.relative]="activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr"
+                [class.scale-110]="activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr"
+                [class.shadow-xl]="activeCell()?.staffId === row.member.id && activeCell()?.dateStr === cell.dateStr"
+                [class.ring-red-500]="cell.isRequested"
+                [class.ring-inset]="cell.isRequested"
+                [class.print:ring-0]="cell.isRequested"
+                [class.opacity-30]="cell.isContext"
+                [class.grayscale]="cell.isContext"
+                [class.border-r-2]="cell.isDivider"
+                [class.border-r-slate-600]="cell.isDivider && isNight()"
+                [class.border-r-gray-400]="cell.isDivider && !isNight()"
+                [class.cursor-not-allowed]="row.isCP"
+                [class.opacity-90]="row.isCP"
+                [class.cursor-pointer]="!row.isCP"
+                [title]="row.isCP ? 'Counterpart Duty (Mirrored)' : ''"
+              >
+                {{ cell.displayValue }}
+              </td>
+            }
+
+            <td
+              class="p-1 border-r border-gray-200/20 text-center font-black"
+              [class]="isNight() ? 'bg-emerald-950/20 text-emerald-400' : 'bg-emerald-50 text-emerald-900'"
+            >
+              {{ row.totals.morning }}
+            </td>
+            <td
+              class="p-1 border-r border-gray-200/20 text-center font-black"
+              [class]="isNight() ? 'bg-blue-950/20 text-blue-400' : 'bg-blue-50 text-blue-900'"
+            >
+              {{ row.totals.evening }}
+            </td>
+            <td
+              class="p-1 border-r border-gray-200/20 text-center font-black"
+              [class]="isNight() ? 'bg-indigo-950/20 text-indigo-400' : 'bg-indigo-50 text-indigo-900'"
+            >
+              {{ row.totals.night }}
+            </td>
+            <td
+              class="p-1 border-r border-gray-200/20 text-center font-black"
+              [class]="isNight() ? 'bg-slate-800 text-slate-400' : 'bg-gray-100 text-gray-900'"
+            >
+              {{ row.totals.off }}
+            </td>
+            <td
+              class="p-1 border-r border-gray-200/20 text-center font-black"
+              [class]="isNight() ? 'bg-red-950/20 text-red-400' : 'bg-red-50 text-red-900'"
+            >
+              {{ row.totals.leave }}
+            </td>
+            <td
+              class="p-1 text-center font-black"
+              [class]="isNight() ? 'bg-rose-950/20 text-rose-400' : 'bg-rose-50 text-rose-900'"
+            >
+              {{ row.totals.holiday }}
+            </td>
+          </tr>
+        }
+      </tbody>
+
+      <tfoot class="border-t-2" [class]="isNight() ? 'border-slate-700' : 'border-slate-400'">
+        <!-- Morning totals -->
+        <tr class="text-white print-total-row-M" [class]="shiftDetails()[ShiftType.Morning].bg">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-white/20 font-black text-[7px] uppercase print:static print-header-personnel"
+            [class]="footerLabelBg()"
+          >
+            Morning Total
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center font-black text-[11px]"
+              [class]="s.isDivider ? 'border-r-2 border-r-white/30' : 'border-r border-white/20'"
+              [class.text-red-300]="s.m.isShort"
+              [class.animate-pulse]="s.m.isShort"
+              [class.font-extrabold]="s.m.isShort"
+              [class.text-white]="!s.m.isShort"
+              [title]="s.minTitle('m')"
+            >
+              {{ s.m.total }}
+            </td>
+          }
+          <td colspan="6" class="bg-black/20"></td>
+        </tr>
+        <tr [class]="subFooterRowClass()">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-gray-200/10 font-black text-[6px] uppercase print:static print-header-personnel"
+            [class]="subFooterLabelBg()"
+          >
+            M Seniors/Males
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center text-[7px] font-bold"
+              [class.bg-amber-950/10]="s.isWeekend && isNight()"
+              [class.bg-amber-50/40]="s.isWeekend && !isNight()"
+              [class]="s.isDivider ? dividerClass() : 'border-r border-gray-200/10'"
+            >
+              <span [class]="s.m.seniors < config().minSenior ? (isNight() ? 'text-rose-400' : 'text-red-600') : ''"
+                >S{{ s.m.seniors }}</span
+              >
+              <span class="mx-0.5 opacity-30">/</span>
+              <span
+                [class]="
+                  s.m.males > config().maxMale ? (isNight() ? 'text-rose-400 font-black' : 'text-red-600 font-black') : ''
+                "
+                >M{{ s.m.males }}</span
+              >
+            </td>
+          }
+          <td colspan="6"></td>
+        </tr>
+
+        <!-- Evening totals -->
+        <tr class="text-white print-total-row-E" [class]="shiftDetails()[ShiftType.Evening].bg">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-white/20 font-black text-[7px] uppercase print:static print-header-personnel"
+            [class]="footerLabelBg()"
+          >
+            Evening Total
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center font-black text-[11px]"
+              [class]="s.isDivider ? 'border-r-2 border-r-white/30' : 'border-r border-white/20'"
+              [class.text-red-300]="s.e.isShort"
+              [class.animate-pulse]="s.e.isShort"
+              [class.font-extrabold]="s.e.isShort"
+              [class.text-white]="!s.e.isShort"
+              [title]="s.minTitle('e')"
+            >
+              {{ s.e.total }}
+            </td>
+          }
+          <td colspan="6" class="bg-black/20"></td>
+        </tr>
+        <tr [class]="subFooterRowClass()">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-gray-200/10 font-black text-[6px] uppercase print:static print-header-personnel"
+            [class]="subFooterLabelBg()"
+          >
+            E Seniors/Males
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center text-[7px] font-bold"
+              [class.bg-amber-950/10]="s.isWeekend && isNight()"
+              [class.bg-amber-50/40]="s.isWeekend && !isNight()"
+              [class]="s.isDivider ? dividerClass() : 'border-r border-gray-200/10'"
+            >
+              <span [class]="s.e.seniors < config().minSenior ? (isNight() ? 'text-rose-400' : 'text-red-600') : ''"
+                >S{{ s.e.seniors }}</span
+              >
+              <span class="mx-0.5 opacity-30">/</span>
+              <span
+                [class]="
+                  s.e.males > config().maxMale ? (isNight() ? 'text-rose-400 font-black' : 'text-red-600 font-black') : ''
+                "
+                >M{{ s.e.males }}</span
+              >
+            </td>
+          }
+          <td colspan="6"></td>
+        </tr>
+
+        <!-- Night totals -->
+        <tr class="text-white print-total-row-N" [class]="shiftDetails()[ShiftType.Night].bg">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-white/20 font-black text-[7px] uppercase print:static print-header-personnel"
+            [class]="footerLabelBg()"
+          >
+            Night Total
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center font-black text-[11px]"
+              [class]="s.isDivider ? 'border-r-2 border-r-white/30' : 'border-r border-white/20'"
+              [class.text-red-300]="s.n.isShort"
+              [class.animate-pulse]="s.n.isShort"
+              [class.font-extrabold]="s.n.isShort"
+              [class.text-white]="!s.n.isShort"
+              [title]="s.minTitle('n')"
+            >
+              {{ s.n.total }}
+            </td>
+          }
+          <td colspan="6" class="bg-black/20"></td>
+        </tr>
+        <tr [class]="subFooterRowClass()">
+          <td
+            class="sticky left-0 z-10 p-1 border-r border-gray-200/10 font-black text-[6px] uppercase print:static print-header-personnel"
+            [class]="subFooterLabelBg()"
+          >
+            N Seniors/Males
+          </td>
+          @for (s of stats(); track s.dateStr) {
+            <td
+              class="text-center text-[7px] font-bold"
+              [class.bg-amber-950/10]="s.isWeekend && isNight()"
+              [class.bg-amber-50/40]="s.isWeekend && !isNight()"
+              [class]="s.isDivider ? dividerClass() : 'border-r border-gray-200/10'"
+            >
+              <span [class]="s.n.seniors < config().minSenior ? (isNight() ? 'text-rose-400' : 'text-red-600') : ''"
+                >S{{ s.n.seniors }}</span
+              >
+              <span class="mx-0.5 opacity-30">/</span>
+              <span
+                [class]="
+                  s.n.males > config().maxMale ? (isNight() ? 'text-rose-400 font-black' : 'text-red-600 font-black') : ''
+                "
+                >M{{ s.n.males }}</span
+              >
+            </td>
+          }
+          <td colspan="6"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  @if (activeCell(); as cell) {
+    @if (!readOnly()) {
+      <div
+        #menu
+        class="fixed z-[9999] border rounded-xl shadow-2xl p-2 w-52 no-print"
+        [class]="isNight() ? 'bg-[#1c2128] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'"
+        [style.top]="menuTop(cell)"
+        [style.bottom]="menuBottom(cell)"
+        [style.left]="menuLeft(cell)"
+      >
+        <div class="flex items-center justify-between mb-2 border-b border-gray-50/10 pb-1">
+          <span class="text-[7px] font-black text-slate-400 uppercase tracking-widest"
+            >{{ cell.staffId }} | {{ cell.dateStr }}</span
+          >
+          <button type="button" (click)="closeMenu()" class="text-slate-300 hover:text-red-500">✕</button>
+        </div>
+        <div class="grid grid-cols-4 gap-1 mb-2">
+          @for (st of allShiftTypes; track st) {
+            <button
+              type="button"
+              (click)="selectShift(st)"
+              class="flex flex-col items-center justify-center py-1.5 rounded border border-black/5 shadow-sm transition-all active:scale-95"
+              [class]="shiftDetails()[st].bg + ' ' + shiftDetails()[st].color"
+            >
+              <span class="text-[9px] font-black">{{ st === ShiftType.None ? '-' : st }}</span>
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          (click)="apply15DayLeave()"
+          class="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-red-600 text-white font-black text-[8px] hover:bg-red-700 transition shadow-sm uppercase"
+        >
+          <app-icon name="Sparkles" [size]="10" /> 15-Day Leave Block
+        </button>
+      </div>
+    }
+  }
+
+  <div class="p-4 rounded-xl border shadow-sm no-print transition-all duration-700" [class]="legendBoxClass()">
+    <h4 class="font-black text-slate-400 mb-2 text-[8px] uppercase tracking-widest flex items-center gap-2">
+      <div class="w-1.5 h-1.5 rounded-full animate-pulse" [class]="isNight() ? 'bg-cyan-400' : 'bg-blue-500'"></div>
+      Shift Legend ({{ theme() }})
+    </h4>
+    <div class="flex flex-wrap gap-x-4 gap-y-2">
+      @for (key of allShiftTypes; track key) {
+        @if (key !== ShiftType.None) {
+          <div class="flex items-center gap-2 text-[8px]">
+            <div
+              class="w-6 h-4 flex items-center justify-center rounded shadow-sm font-black text-[7px]"
+              [class]="shiftDetails()[key].bg + ' ' + shiftDetails()[key].color"
+              [class.ring-1]="key.startsWith('R')"
+              [class.ring-red-500]="key.startsWith('R')"
+              [class.ring-inset]="key.startsWith('R')"
+            >
+              {{ legendLabel(key) }}
+            </div>
+            <span class="font-black uppercase" [class]="isNight() ? 'text-slate-400' : 'text-slate-600'">{{
+              shiftDetails()[key].label
+            }}</span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

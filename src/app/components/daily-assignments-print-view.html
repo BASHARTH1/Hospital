@@ -1,0 +1,272 @@
+<div class="space-y-6">
+  <!-- Header & main controls -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print pb-4 border-b border-gray-200/50">
+    <div>
+      <button
+        type="button"
+        (click)="back.emit()"
+        class="flex items-center gap-1.5 text-xs font-black text-gray-500 hover:text-gray-800 transition uppercase mb-1"
+      >
+        <app-icon name="ChevronLeft" [size]="14" />
+        Back to Table Grid
+      </button>
+      <h2 class="text-xl font-black flex items-center gap-2 text-gray-800">
+        <span class="p-1 bg-rose-500 text-white rounded-lg flex items-center justify-center">
+          <app-icon name="CalendarIcon" [size]="16" />
+        </span>
+        Daily Assignment Sheet (Print Layout)
+      </h2>
+      <p class="text-xs text-gray-500 font-medium">
+        Generate and print daily duty logs matching physical roster charts with sign-off cells
+      </p>
+    </div>
+    <div class="flex gap-2 w-full sm:w-auto">
+      <button
+        type="button"
+        (click)="print()"
+        [disabled]="selectedDays().length === 0"
+        class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-black text-xs shadow-md uppercase tracking-wider"
+        [class.opacity-50]="selectedDays().length === 0"
+        [class.cursor-not-allowed]="selectedDays().length === 0"
+      >
+        <app-icon name="Printer" [size]="14" />
+        Print sheets ({{ selectedDays().length }} days)
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 no-print">
+    <div class="space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-600">
+          <app-icon name="Settings" [size]="14" />
+          Print Options
+        </h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Days per Page</label>
+            <select
+              [value]="daysPerPage()"
+              (change)="daysPerPage.set($any($event.target).value)"
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="1">1 Day per Page (Landscape)</option>
+              <option value="2">2 Days per Page (Landscape - Best Fit)</option>
+              <option value="continuous">Continuous (Scroll / Grid)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Min Rows for Personnel</label>
+            <input
+              type="number"
+              min="4"
+              max="15"
+              [value]="numRows()"
+              (input)="setNumRows($any($event.target).value)"
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <span class="text-[9px] text-gray-400 mt-0.5 block">Sets uniform height for lists</span>
+          </div>
+
+          <div>
+            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Color Theme</label>
+            <select
+              [value]="printTheme()"
+              (change)="printTheme.set($any($event.target).value)"
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="slate">Classic Slate (Standard)</option>
+              <option value="teal">Medical Teal</option>
+              <option value="indigo">Navy Professional</option>
+              <option value="amber">Warm Amber</option>
+              <option value="emerald">Emerald Healing</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category font colors -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-rose-600">
+            <app-icon name="Palette" [size]="14" />
+            Font Colors
+          </span>
+          <button
+            type="button"
+            (click)="resetColors()"
+            class="text-[9px] font-black text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight"
+            title="Reset all categories to default color"
+          >
+            Default
+          </button>
+        </h3>
+
+        <div class="grid grid-cols-2 gap-3">
+          @for (cat of colorCategories; track cat.key) {
+            <div class="space-y-1">
+              <label class="text-[9px] font-black text-gray-400 uppercase">{{ cat.label }}</label>
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="color"
+                  [value]="categoryColors()[cat.key]"
+                  (input)="handleColorChange(cat.key, $any($event.target).value)"
+                  class="w-6 h-6 rounded cursor-pointer border border-gray-200"
+                />
+                <span class="text-[9px] font-mono font-bold text-gray-500 uppercase">{{
+                  categoryColors()[cat.key]
+                }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Date selectors -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-emerald-600">
+            <app-icon name="CalendarIcon" [size]="14" />
+            Days to Print
+          </span>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black">
+            {{ selectedDays().length }} / {{ daysInMonth() }} Selected
+          </span>
+        </h3>
+
+        <div class="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            (click)="selectAll()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            (click)="selectNone()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
+          >
+            None
+          </button>
+          <button
+            type="button"
+            (click)="selectWeekdays()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-indigo-600"
+          >
+            Weekdays
+          </button>
+          <button
+            type="button"
+            (click)="selectWeekends()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-amber-600"
+          >
+            Weekends
+          </button>
+        </div>
+
+        <div class="grid grid-cols-5 gap-1.5 max-h-[160px] overflow-y-auto pr-1">
+          @for (d of dayCells(); track d.dayNum) {
+            <button
+              type="button"
+              (click)="toggleDaySelection(d.dayNum)"
+              class="p-1.5 rounded-lg text-center font-bold text-xs border transition"
+              [class]="
+                isDaySelected(d.dayNum)
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold'
+                  : d.isWeekend
+                    ? 'bg-amber-50/50 border-amber-100 text-amber-700'
+                    : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'
+              "
+            >
+              {{ d.dayNum }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div class="lg:col-span-3 space-y-6">
+      @if (selectedDays().length === 0) {
+        <div class="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-gray-200 text-center space-y-4">
+          <div class="p-3 bg-rose-50 text-rose-500 rounded-full animate-bounce">
+            <app-icon name="CalendarIcon" [size]="32" />
+          </div>
+          <div>
+            <h4 class="font-black text-gray-800 text-sm">No Days Selected</h4>
+            <p class="text-xs text-gray-400 max-w-sm">
+              Please select at least one day from the left sidebar to render the daily assignment preview.
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="selectAll()"
+            class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-black text-xs uppercase"
+          >
+            Select All Days
+          </button>
+        </div>
+      } @else {
+        <div class="space-y-6">
+          <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-xs font-medium">
+            <strong>💡 Tip:</strong> You can type any workshop topic, schedule, or daily agenda notes directly into the
+            <strong>Agenda &amp; Notes</strong> free-text box below. Your input is saved automatically and prints
+            perfectly!
+          </div>
+
+          @for (dayNum of selectedDays(); track dayNum) {
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm relative print-day-block">
+              <div class="absolute top-2 right-2 no-print z-10">
+                <button
+                  type="button"
+                  (click)="toggleDaySelection(dayNum)"
+                  class="p-1 bg-gray-100 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                  title="Remove from printout"
+                >
+                  <app-icon name="Trash2" [size]="12" />
+                </button>
+              </div>
+
+              <app-day-assignment-card
+                [staff]="staff()"
+                [assignments]="assignments()"
+                [config]="config()"
+                [dayNum]="dayNum"
+                [monthIdx]="monthIdx()"
+                [shortMonthName]="shortMonthName()"
+                [numRows]="numRows()"
+                [themeStyles]="themeStyles()"
+                [notes]="notesFor(dayNum)"
+                (notesChange)="onNotesChange(dayNum, $event)"
+              />
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Printable area -->
+  <div class="hidden print:block print-days-container">
+    @for (dayNum of selectedDays(); track dayNum) {
+      <div class="print-day-block">
+        <app-day-assignment-card
+          [staff]="staff()"
+          [assignments]="assignments()"
+          [config]="config()"
+          [dayNum]="dayNum"
+          [monthIdx]="monthIdx()"
+          [shortMonthName]="shortMonthName()"
+          [numRows]="numRows()"
+          [themeStyles]="themeStyles()"
+          [notes]="notesFor(dayNum)"
+          [isPrint]="true"
+        />
+      </div>
+    }
+  </div>
+</div>

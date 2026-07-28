@@ -1,0 +1,8 @@
+﻿/* Tailwind is loaded from the CDN in index.html (same as the original app),
+   so this file only holds the few global rules the app relies on. */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

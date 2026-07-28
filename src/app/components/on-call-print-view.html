@@ -1,0 +1,170 @@
+<div class="space-y-6">
+  <!-- Top header & back button -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print pb-4 border-b border-gray-200/50">
+    <div>
+      <button
+        type="button"
+        (click)="back.emit()"
+        class="flex items-center gap-1.5 text-xs font-black text-gray-500 hover:text-gray-800 transition uppercase mb-1"
+      >
+        <app-icon name="ChevronLeft" [size]="14" />
+        Back to Table Grid
+      </button>
+      <h2 class="text-xl font-black flex items-center gap-2 text-gray-800">
+        <span class="p-1 bg-amber-500 text-white rounded-lg flex items-center justify-center">
+          <app-icon name="Users" [size]="16" />
+        </span>
+        On-Call List (Print Layout)
+      </h2>
+      <p class="text-xs text-gray-500 font-medium">
+        Generate and print a professional department log sheet for all On-Call shift duties
+      </p>
+    </div>
+    <div class="flex gap-2 w-full sm:w-auto">
+      <button
+        type="button"
+        (click)="print()"
+        [disabled]="rows().length === 0"
+        class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition font-black text-xs shadow-md uppercase tracking-wider"
+        [class.opacity-50]="rows().length === 0"
+        [class.cursor-not-allowed]="rows().length === 0"
+      >
+        <app-icon name="Printer" [size]="14" />
+        Print On-Call List ({{ rows().length }} days)
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings panel & preview -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 no-print">
+    <div class="space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-600">
+          <app-icon name="Settings" [size]="14" />
+          Print Options
+        </h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Print Orientation</label>
+            <select
+              [value]="printOrientation()"
+              (change)="printOrientation.set($any($event.target).value)"
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="portrait">Portrait (Best for simple lists)</option>
+              <option value="landscape">Landscape (Best for wider columns)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Color Theme</label>
+            <select
+              [value]="printTheme()"
+              (change)="printTheme.set($any($event.target).value)"
+              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="slate">Classic Slate (Standard)</option>
+              <option value="teal">Medical Teal</option>
+              <option value="indigo">Navy Professional</option>
+              <option value="amber">Warm Amber</option>
+              <option value="emerald">Emerald Healing</option>
+            </select>
+          </div>
+
+          <div class="pt-2 border-t border-gray-100 space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                [checked]="hideEmptyDays()"
+                (change)="hideEmptyDays.set($any($event.target).checked)"
+                class="rounded border-gray-300 text-amber-600 focus:ring-amber-500 h-4 w-4"
+              />
+              <span class="text-xs font-bold text-gray-700">Hide days with no on-calls</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day selector -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-emerald-600">
+            <app-icon name="CalendarIcon" [size]="14" />
+            Days to Print
+          </span>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black">
+            {{ selectedDays().length }} / {{ daysInMonth() }} Selected
+          </span>
+        </h3>
+
+        <div class="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            (click)="selectAll()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            (click)="selectNone()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
+          >
+            None
+          </button>
+          <button
+            type="button"
+            (click)="selectWeekdays()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-indigo-600"
+          >
+            Weekdays
+          </button>
+          <button
+            type="button"
+            (click)="selectWeekends()"
+            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-amber-600"
+          >
+            Weekends
+          </button>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 p-2 bg-gray-50 rounded-xl border border-gray-100">
+          @for (d of dayCells(); track d.dayNum) {
+            <button
+              type="button"
+              (click)="toggleDaySelection(d.dayNum)"
+              class="h-7 rounded-lg text-[11px] font-bold flex items-center justify-center transition-all"
+              [class]="
+                isDaySelected(d.dayNum)
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : d.isWeekend
+                    ? 'bg-amber-100/50 text-amber-800 hover:bg-amber-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+              "
+            >
+              {{ d.dayNum }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="lg:col-span-3 bg-gray-100 border border-gray-200 rounded-3xl p-6 sm:p-8 overflow-x-auto min-h-[500px]">
+      <div class="min-w-[650px] bg-white p-8 rounded-2xl shadow-md border border-gray-200 select-none">
+        <app-on-call-table
+          [config]="config()"
+          [rows]="rows()"
+          [themeStyles]="themeStyles()"
+          [printedOn]="printedOn"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Print-only markup -->
+  <div class="hidden print-oncall-container w-full bg-white text-black p-0">
+    <app-on-call-table [config]="config()" [rows]="rows()" [themeStyles]="themeStyles()" [printedOn]="printedOn" />
+  </div>
+</div>
