@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Roster Manager">
+  <rect width="64" height="64" rx="14" fill="#2563eb" />
+  <g fill="#ffffff">
+    <rect x="24" y="11" width="16" height="42" rx="3.5" />
+    <rect x="11" y="24" width="42" height="16" rx="3.5" />
+  </g>
+</svg>
