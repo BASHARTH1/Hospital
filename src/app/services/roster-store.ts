@@ -1,18 +1,12 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { MONTHS } from '../constants';
 import { Assignment, RosterConfig, ShiftType, StaffMember, TabType, ThemeType, pad2 } from '../models/types';
+import { RosterDataService, Ward } from './roster-data.service';
 
-const INITIAL_STAFF: StaffMember[] = [
-  { id: 'S001', name: 'skldf', isSenior: true, isMale: false, maxMorning: 15, maxEvening: 10, maxNight: 8, phone: '555-0101' },
-  { id: 'S002', name: 'jkjyy', isSenior: true, isMale: true, maxMorning: 15, maxEvening: 10, maxNight: 8, phone: '555-0102' },
-  { id: 'S003', name: 'hgfhgj', isSenior: true, isMale: false, maxMorning: 15, maxEvening: 10, maxNight: 8, phone: '555-0103' },
-  { id: 'S004', name: 'jghjj', isSenior: false, isMale: true, maxMorning: 15, maxEvening: 10, maxNight: 8, phone: '555-0104' },
-];
-
-const INITIAL_CONFIG: RosterConfig = {
-  year: 2025,
-  month: 'December',
-  wardName: 'ICU',
+const DEFAULT_CONFIG: RosterConfig = {
+  year: new Date().getFullYear(),
+  month: MONTHS[new Date().getMonth()],
+  wardName: '',
   minMorning: 7,
   minEvening: 6,
   minNight: 6,
@@ -22,7 +16,7 @@ const INITIAL_CONFIG: RosterConfig = {
   minMorningHoliday: 5,
   minEveningHoliday: 5,
   minNightHoliday: 5,
-  holidays: ['2025-12-25', '2025-12-31'], // Christmas and New Year's Eve as default holidays
+  holidays: [],
   minSenior: 2,
   maxMale: 2,
   maxConsecutiveEvening: 2,
@@ -68,19 +62,36 @@ function downloadCsv(rows: (string | number)[][], filename: string): void {
 }
 
 /**
- * Single source of truth for the whole roster app — the Angular equivalent of the
- * `useState` cluster that lived in the React `App` component.
+ * Single source of truth for the roster screens, backed by Supabase.
+ *
+ * Every mutation updates the signals immediately and queues the matching database
+ * write. Writes run through one serial chain so a staff insert always lands before
+ * an assignment that references it.
  */
 @Injectable({ providedIn: 'root' })
 export class RosterStore {
+  private readonly data = inject(RosterDataService);
+
   readonly activeTab = signal<TabType>('Staff');
-  readonly staff = signal<StaffMember[]>(INITIAL_STAFF);
-  readonly config = signal<RosterConfig>(INITIAL_CONFIG);
+  readonly staff = signal<StaffMember[]>([]);
+  readonly config = signal<RosterConfig>(DEFAULT_CONFIG);
   readonly assignments = signal<Assignment[]>([]);
   readonly theme = signal<ThemeType>(readStoredTheme());
 
+  readonly wards = signal<Ward[]>([]);
+  readonly wardId = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly syncError = signal<string | null>(null);
+
+  readonly activeWard = computed(() => this.wards().find((w) => w.id === this.wardId()) ?? null);
+
+  /** Serialises database writes and surfaces failures without losing the queue. */
+  private queue: Promise<unknown> = Promise.resolve();
+  private staffSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private configSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
-    // Theming is a single `dark` class on <html>; components use `dark:` variants.
     effect(() => {
       const theme = this.theme();
       document.documentElement.classList.toggle('dark', theme === 'Dark');
@@ -91,12 +102,123 @@ export class RosterStore {
       }
     });
 
-    // Roster sheets are always printed light, whatever is on screen.
     window.addEventListener('beforeprint', () => document.documentElement.classList.remove('dark'));
     window.addEventListener('afterprint', () =>
       document.documentElement.classList.toggle('dark', this.theme() === 'Dark'),
     );
   }
+
+  // ------------------------------------------------------------ plumbing ----
+
+  private enqueue<T>(work: () => Promise<T>): Promise<T | undefined> {
+    const next = this.queue.then(async () => {
+      this.saving.set(true);
+      try {
+        return await work();
+      } catch (err) {
+        this.syncError.set((err as Error).message || 'Could not save to the server.');
+        return undefined;
+      } finally {
+        this.saving.set(false);
+      }
+    });
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
+
+  private scheduleStaffSave(): void {
+    if (this.staffSaveTimer) clearTimeout(this.staffSaveTimer);
+    this.staffSaveTimer = setTimeout(() => {
+      this.staffSaveTimer = null;
+      const ward = this.wardId();
+      if (!ward) return;
+      void this.enqueue(() => this.data.saveStaff(ward, this.staff()));
+    }, 600);
+  }
+
+  /** Forces any pending staff write to run now, so later writes see those rows. */
+  private flushStaff(): void {
+    if (!this.staffSaveTimer) return;
+    clearTimeout(this.staffSaveTimer);
+    this.staffSaveTimer = null;
+    const ward = this.wardId();
+    if (ward) void this.enqueue(() => this.data.saveStaff(ward, this.staff()));
+  }
+
+  private scheduleConfigSave(): void {
+    if (this.configSaveTimer) clearTimeout(this.configSaveTimer);
+    this.configSaveTimer = setTimeout(() => {
+      this.configSaveTimer = null;
+      const ward = this.wardId();
+      if (!ward) return;
+      void this.enqueue(() => this.data.saveConfig(ward, this.config()));
+    }, 800);
+  }
+
+  // --------------------------------------------------------------- wards ----
+
+  async refreshWards(): Promise<void> {
+    try {
+      this.wards.set(await this.data.listWards());
+    } catch (err) {
+      this.syncError.set((err as Error).message);
+    }
+  }
+
+  /** Loads a ward's staff, rules and duties for the currently selected month. */
+  async openWard(wardId: string): Promise<void> {
+    this.loading.set(true);
+    this.syncError.set(null);
+    try {
+      const ward = this.wards().find((w) => w.id === wardId);
+      const current = this.config();
+      const snapshot = await this.data.loadWard(wardId, current.year, current.month);
+
+      this.wardId.set(wardId);
+      this.staff.set(snapshot.staff);
+      this.assignments.set(snapshot.assignments);
+      this.config.set({
+        ...(snapshot.config ?? DEFAULT_CONFIG),
+        year: snapshot.config?.year ?? current.year,
+        month: snapshot.config?.month ?? current.month,
+        wardName: ward?.name ?? snapshot.config?.wardName ?? '',
+      });
+      this.activeTab.set('Staff');
+    } catch (err) {
+      this.syncError.set((err as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  closeWard(): void {
+    this.wardId.set(null);
+    this.staff.set([]);
+    this.assignments.set([]);
+    this.config.set(DEFAULT_CONFIG);
+  }
+
+  /** Re-reads rules and duties after the period changes. */
+  private async reloadPeriod(): Promise<void> {
+    const ward = this.wardId();
+    if (!ward) return;
+    this.loading.set(true);
+    try {
+      const current = this.config();
+      const snapshot = await this.data.loadWard(ward, current.year, current.month);
+      this.staff.set(snapshot.staff);
+      this.assignments.set(snapshot.assignments);
+      if (snapshot.config) {
+        this.config.set({ ...snapshot.config, wardName: current.wardName });
+      }
+    } catch (err) {
+      this.syncError.set((err as Error).message);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  // ------------------------------------------------------- derived state ----
 
   /** Assignments plus the mirrored duties of every counterpart staff member. */
   readonly resolvedAssignments = computed<Assignment[]>(() => {
@@ -134,14 +256,33 @@ export class RosterStore {
   }
 
   setConfig(config: RosterConfig): void {
+    const previous = this.config();
     this.config.set(config);
+
+    // Renaming the ward here keeps the sidebar and the roster header in step.
+    if (config.wardName !== previous.wardName && this.wardId()) {
+      const ward = this.wardId()!;
+      const name = (config.wardName ?? '').trim();
+      if (name) {
+        void this.enqueue(async () => {
+          await this.data.updateWard(ward, { name });
+          await this.refreshWards();
+        });
+      }
+    }
+
+    if (config.year !== previous.year || config.month !== previous.month) {
+      void this.reloadPeriod();
+      return;
+    }
+    this.scheduleConfigSave();
   }
+
+  // --------------------------------------------------------------- staff ----
 
   private nextStaffId(current: StaffMember[]): string {
     const nextIdNum =
-      current.length > 0
-        ? Math.max(...current.map((s) => parseInt(s.id.replace(/\D/g, '') || '0'))) + 1
-        : 1;
+      current.length > 0 ? Math.max(...current.map((s) => parseInt(s.id.replace(/\D/g, '') || '0'))) + 1 : 1;
     return `S${nextIdNum.toString().padStart(3, '0')}`;
   }
 
@@ -159,6 +300,7 @@ export class RosterStore {
         phone: '',
       },
     ]);
+    this.scheduleStaffSave();
   }
 
   addHaStaff(): void {
@@ -175,6 +317,7 @@ export class RosterStore {
         phone: '',
       },
     ]);
+    this.scheduleStaffSave();
   }
 
   addCounterPartStaff(): void {
@@ -196,6 +339,7 @@ export class RosterStore {
         },
       ];
     });
+    this.scheduleStaffSave();
   }
 
   updateStaff(id: string, updates: Partial<StaffMember>): void {
@@ -210,31 +354,41 @@ export class RosterStore {
         return;
       }
 
-      // Update the staff ID, any other updates, and every counterpart pointer.
       this.staff.update((prev) =>
         prev.map((s) => {
           const sUpdates = s.id === id ? { ...updates, id: cleanNewId } : {};
           const newObj: StaffMember = { ...s, ...sUpdates };
-          if (s.counterPartOf === id) {
-            newObj.counterPartOf = cleanNewId;
-          }
+          if (s.counterPartOf === id) newObj.counterPartOf = cleanNewId;
           return newObj;
         }),
       );
+      this.assignments.update((prev) => prev.map((a) => (a.staffId === id ? { ...a, staffId: cleanNewId } : a)));
 
-      this.assignments.update((prev) =>
-        prev.map((a) => (a.staffId === id ? { ...a, staffId: cleanNewId } : a)),
-      );
+      const ward = this.wardId();
+      if (ward) {
+        this.flushStaff();
+        void this.enqueue(() => this.data.renameStaffCode(ward, id, cleanNewId));
+      }
+      this.scheduleStaffSave();
       return;
     }
 
     this.staff.update((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    this.scheduleStaffSave();
   }
 
   removeMultipleStaff(ids: string[]): void {
     this.staff.update((prev) => prev.filter((s) => !ids.includes(s.id)));
     this.assignments.update((prev) => prev.filter((a) => !ids.includes(a.staffId)));
+
+    const ward = this.wardId();
+    if (ward) {
+      this.flushStaff();
+      void this.enqueue(() => this.data.deleteStaff(ward, ids));
+    }
   }
+
+  // --------------------------------------------------------- assignments ----
 
   updateAssignment(staffId: string, date: string, shift: ShiftType): void {
     this.assignments.update((prev) => {
@@ -242,6 +396,12 @@ export class RosterStore {
       if (shift === ShiftType.None) return filtered;
       return [...filtered, { staffId, date, shift }];
     });
+
+    const ward = this.wardId();
+    if (ward) {
+      this.flushStaff();
+      void this.enqueue(() => this.data.setAssignments(ward, [{ staffId, date, shift }]));
+    }
   }
 
   updateAssignmentsBatch(updates: Assignment[]): void {
@@ -250,11 +410,8 @@ export class RosterStore {
       prev.forEach((a) => map.set(`${a.staffId}|${a.date}`, a.shift));
 
       updates.forEach((u) => {
-        if (u.shift === ShiftType.None) {
-          map.delete(`${u.staffId}|${u.date}`);
-        } else {
-          map.set(`${u.staffId}|${u.date}`, u.shift);
-        }
+        if (u.shift === ShiftType.None) map.delete(`${u.staffId}|${u.date}`);
+        else map.set(`${u.staffId}|${u.date}`, u.shift);
       });
 
       const result: Assignment[] = [];
@@ -264,11 +421,27 @@ export class RosterStore {
       });
       return result;
     });
+
+    const ward = this.wardId();
+    if (ward) {
+      this.flushStaff();
+      void this.enqueue(() => this.data.setAssignments(ward, updates));
+    }
   }
 
+  /** Replaces the visible month, used after generating a roster. */
   setAssignments(assignments: Assignment[]): void {
     this.assignments.set(assignments);
+
+    const ward = this.wardId();
+    if (ward) {
+      const { year, month } = this.config();
+      this.flushStaff();
+      void this.enqueue(() => this.data.replaceMonth(ward, year, month, assignments));
+    }
   }
+
+  // ----------------------------------------------------------------- csv ----
 
   exportStaff(): void {
     const headers = ['id', 'name', 'isSenior', 'isMale', 'maxMorning', 'maxEvening', 'maxNight', 'phone'];
@@ -310,10 +483,19 @@ export class RosterStore {
         phone: phone ? phone.trim() : '',
       });
     }
-    if (importedStaff.length > 0) {
-      this.staff.set(importedStaff);
-      alert(`Successfully imported ${importedStaff.length} staff members.`);
+    if (importedStaff.length === 0) return;
+
+    const removed = this.staff().filter((s) => !importedStaff.some((n) => n.id === s.id)).map((s) => s.id);
+    this.staff.set(importedStaff);
+
+    const ward = this.wardId();
+    if (ward) {
+      void this.enqueue(async () => {
+        if (removed.length) await this.data.deleteStaff(ward, removed);
+        await this.data.saveStaff(ward, importedStaff);
+      });
     }
+    alert(`Successfully imported ${importedStaff.length} staff members.`);
   }
 
   exportAssignments(): void {
@@ -358,15 +540,8 @@ export class RosterStore {
       }
     }
 
-    if (imported.length > 0) {
-      this.assignments.update((prev) => {
-        const otherMonths = prev.filter((a) => {
-          const d = new Date(a.date);
-          return d.getMonth() !== monthIdx || d.getFullYear() !== config.year;
-        });
-        return [...otherMonths, ...imported];
-      });
-      alert(`Successfully imported ${imported.length} shift assignments for ${config.month}.`);
-    }
+    if (imported.length === 0) return;
+    this.setAssignments(imported);
+    alert(`Successfully imported ${imported.length} shift assignments for ${config.month}.`);
   }
 }

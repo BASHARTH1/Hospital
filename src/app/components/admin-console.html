@@ -1,0 +1,214 @@
+<div class="space-y-4">
+  <div>
+    <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Administration</h1>
+    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+      Create wards, issue head-of-roster accounts, and open any ward's roster.
+    </p>
+  </div>
+
+  @if (error(); as message) {
+    <p class="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700
+      dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+      <app-icon name="Info" [size]="14" class="mt-px shrink-0" />{{ message }}
+    </p>
+  }
+  @if (notice(); as message) {
+    <p class="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs
+      text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+      <app-icon name="CheckCircle2" [size]="14" class="mt-px shrink-0" />{{ message }}
+    </p>
+  }
+
+  <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+    <!-- Wards -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Wards</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{{ store.wards().length }}</span>
+      </div>
+
+      <div class="card-body">
+        <form class="flex gap-2" (submit)="createWard($event)">
+          <input
+            type="text"
+            [value]="newWardName()"
+            (input)="newWardName.set($any($event.target).value)"
+            class="input input-sm"
+            placeholder="New ward name, e.g. ICU"
+            aria-label="New ward name"
+          />
+          <button type="submit" class="btn-primary btn-sm shrink-0" [disabled]="busy()">
+            <app-icon name="Plus" [size]="14" /> Add
+          </button>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+        <table class="w-full">
+          <thead class="table-head">
+            <tr>
+              <th class="th">Ward</th>
+              <th class="th">Head of roster</th>
+              <th class="th w-32"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            @for (ward of store.wards(); track ward.id) {
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <td class="px-4 py-2">
+                  <input
+                    type="text"
+                    [value]="ward.name"
+                    (change)="renameWard(ward.id, $any($event.target).value)"
+                    class="input-inline font-medium"
+                    [attr.aria-label]="'Rename ' + ward.name"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <select
+                    (change)="assignWard(ward.id, $any($event.target).value)"
+                    class="input input-sm w-auto py-1"
+                    [attr.aria-label]="'Head of roster for ' + ward.name"
+                  >
+                    <option value="" [selected]="!ward.head_id">Unassigned</option>
+                    @for (head of heads(); track head.id) {
+                      @if (head.role === 'head') {
+                        <option [value]="head.id" [selected]="head.id === ward.head_id">
+                          {{ head.full_name || head.email }}
+                        </option>
+                      }
+                    }
+                  </select>
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex items-center justify-end gap-1">
+                    <button type="button" (click)="openWard(ward.id)" class="btn-secondary btn-sm">Open</button>
+                    <button
+                      type="button"
+                      (click)="deleteWard(ward.id, ward.name)"
+                      class="btn-icon hover:text-rose-600"
+                      [attr.aria-label]="'Delete ' + ward.name"
+                    >
+                      <app-icon name="Trash2" [size]="15" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (store.wards().length === 0) {
+              <tr>
+                <td colspan="3" class="px-4 py-10 text-center text-sm text-slate-400 dark:text-slate-500">
+                  No wards yet. Add one above.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Accounts -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Accounts</h2>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{{ heads().length }}</span>
+      </div>
+
+      <div class="card-body">
+        <form class="grid grid-cols-1 gap-2 sm:grid-cols-2" (submit)="createHead($event)">
+          <div>
+            <label for="head-name" class="label">Full name</label>
+            <input id="head-name" type="text" [value]="newHeadName()"
+              (input)="newHeadName.set($any($event.target).value)" class="input input-sm" placeholder="Jane Smith" />
+          </div>
+          <div>
+            <label for="head-email" class="label">Email</label>
+            <input id="head-email" type="email" [value]="newHeadEmail()"
+              (input)="newHeadEmail.set($any($event.target).value)" class="input input-sm" placeholder="jane@hospital.org" />
+          </div>
+          <div>
+            <label for="head-password" class="label">Temporary password</label>
+            <div class="flex gap-1">
+              <input id="head-password" type="text" [value]="newHeadPassword()"
+                (input)="newHeadPassword.set($any($event.target).value)" class="input input-sm font-mono" />
+              <button type="button" (click)="generatePassword()" class="btn-secondary btn-sm shrink-0">
+                Generate
+              </button>
+            </div>
+          </div>
+          <div>
+            <label for="head-ward" class="label">Assign ward (optional)</label>
+            <select id="head-ward" (change)="newHeadWard.set($any($event.target).value)" class="input input-sm">
+              <option value="" [selected]="newHeadWard() === ''">None</option>
+              @for (ward of store.wards(); track ward.id) {
+                <option [value]="ward.id" [selected]="ward.id === newHeadWard()">{{ ward.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <button type="submit" class="btn-primary w-full" [disabled]="busy()">
+              <app-icon name="Plus" [size]="15" /> Create head-of-roster account
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+        <table class="w-full">
+          <thead class="table-head">
+            <tr>
+              <th class="th">Person</th>
+              <th class="th">Role</th>
+              <th class="th">Wards</th>
+              <th class="th w-28"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            @for (head of heads(); track head.id) {
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <td class="px-4 py-2">
+                  <div class="text-sm font-medium text-slate-800 dark:text-slate-200">
+                    {{ head.full_name || '—' }}
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400">{{ head.email }}</div>
+                </td>
+                <td class="px-4 py-2">
+                  <span
+                    class="badge"
+                    [class]="
+                      head.role === 'admin'
+                        ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    "
+                    >{{ head.role }}</span
+                  >
+                  @if (head.must_change_password) {
+                    <span class="ml-1 badge bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                      temp password
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-2 text-xs text-slate-600 dark:text-slate-300">{{ wardsOf(head.id) || '—' }}</td>
+                <td class="px-4 py-2">
+                  @if (head.role !== 'admin') {
+                    <div class="flex items-center justify-end gap-1">
+                      <button type="button" (click)="resetPassword(head)" class="btn-secondary btn-sm">Reset</button>
+                      <button
+                        type="button"
+                        (click)="deleteHead(head)"
+                        class="btn-icon hover:text-rose-600"
+                        [attr.aria-label]="'Delete account for ' + head.email"
+                      >
+                        <app-icon name="Trash2" [size]="15" />
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
