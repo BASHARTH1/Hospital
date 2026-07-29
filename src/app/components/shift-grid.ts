@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import { ALL_SHIFT_TYPES, ShiftStyle, THEME_SHIFT_STYLES } from '../constants';
-import { Assignment, RosterConfig, ShiftType, StaffMember, ThemeType, isHaStaff, pad2 } from '../models/types';
+import { ALL_SHIFT_TYPES, SHIFT_STYLES, ShiftStyle } from '../constants';
+import { Assignment, RosterConfig, ShiftType, StaffMember, isHaStaff, pad2 } from '../models/types';
 import { Icon } from '../ui/icon';
 
 interface DayInfo {
@@ -21,6 +21,7 @@ interface GridCell {
   shift: ShiftType;
   displayValue: string;
   classes: string;
+  title: string;
   isContext: boolean;
   isDivider: boolean;
   isRequested: boolean;
@@ -40,6 +41,8 @@ interface ShiftBreakdown {
   males: number;
   targetMin: number;
   isShort: boolean;
+  seniorShort: boolean;
+  maleOver: boolean;
 }
 
 interface DayStats {
@@ -47,7 +50,7 @@ interface DayStats {
   isWeekend: boolean;
   isHoliday: boolean;
   isDivider: boolean;
-  minTitle: (kind: 'm' | 'e' | 'n') => string;
+  dayLabel: string;
   m: ShiftBreakdown;
   e: ShiftBreakdown;
   n: ShiftBreakdown;
@@ -62,11 +65,11 @@ interface ActiveCell {
 }
 
 /**
- * Drops any `ring-*` utility baked into a theme swatch.
+ * Drops any `ring-*` utility baked into a shift swatch.
  *
- * "Requested" shifts get an explicit red inset ring from the template. Leaving the
- * theme's own ring on the element too would put two competing `ring` utilities on one
- * node, and which one wins depends purely on their order in the compiled stylesheet.
+ * "Requested" shifts get an explicit red inset ring from the template. Leaving another
+ * ring on the element too would put two competing `ring` utilities on one node, and
+ * which one wins depends purely on their order in the compiled stylesheet.
  */
 function stripRings(classes: string): string {
   return classes
@@ -97,7 +100,6 @@ export class ShiftGrid {
   readonly assignments = input.required<Assignment[]>();
   readonly readOnly = input(false);
   readonly hideContextDays = input(false);
-  readonly theme = input<ThemeType>('Professional');
 
   readonly update = output<Assignment>();
   readonly updateBatch = output<Assignment[]>();
@@ -107,8 +109,7 @@ export class ShiftGrid {
 
   readonly ShiftType = ShiftType;
   readonly allShiftTypes = ALL_SHIFT_TYPES;
-
-  readonly shiftDetails = computed(() => THEME_SHIFT_STYLES[this.theme()]);
+  readonly shiftStyles = SHIFT_STYLES;
 
   private readonly monthIdx = computed(() => {
     const c = this.config();
@@ -151,7 +152,6 @@ export class ShiftGrid {
   /** Everything the table body needs, precomputed once per data change. */
   readonly rows = computed<GridRow[]>(() => {
     const days = this.allVisibleDays();
-    const details = this.shiftDetails();
     const monthDates = new Set(this.currentMonthDays().map((d) => d.dateStr));
 
     const shiftMap = new Map<string, ShiftType>();
@@ -162,7 +162,7 @@ export class ShiftGrid {
 
       const cells = days.map((d) => {
         const shift = shiftMap.get(`${member.id}|${d.dateStr}`) ?? ShiftType.None;
-        const style: ShiftStyle = details[shift];
+        const style: ShiftStyle = SHIFT_STYLES[shift];
 
         if (monthDates.has(d.dateStr)) {
           if (MORNING_SHIFTS.includes(shift)) totals.morning++;
@@ -187,9 +187,12 @@ export class ShiftGrid {
           shift,
           displayValue,
           classes: `shift-cell-${shift} ${isRequested ? stripRings(style.bg) : style.bg} ${style.color}`,
+          title: member.isCounterPart
+            ? 'Counterpart duty (mirrored)'
+            : `${member.name || member.id} · ${d.dateStr} · ${style.description}`,
           isContext: d.isContext,
           isDivider: d.isDivider,
-          isRequested: shift.startsWith('R'),
+          isRequested,
         };
       });
 
@@ -206,8 +209,7 @@ export class ShiftGrid {
   /** Per-day headcount / seniority / gender breakdown rendered in the table footer. */
   readonly stats = computed<DayStats[]>(() => {
     const config = this.config();
-    const staff = this.staff();
-    const staffById = new Map(staff.map((s) => [s.id, s]));
+    const staffById = new Map(this.staff().map((s) => [s.id, s]));
     const assignments = this.assignments();
 
     return this.allVisibleDays().map((dInfo) => {
@@ -219,18 +221,21 @@ export class ShiftGrid {
           if (assoc?.isCounterPart) return false;
           return codes.includes(a.shift);
         });
-        const staffInShift = matching
-          .map((a) => staffById.get(a.staffId))
-          .filter((s): s is StaffMember => !!s);
+        const staffInShift = matching.map((a) => staffById.get(a.staffId)).filter((s): s is StaffMember => !!s);
 
         const targetMin = dInfo.isHoliday ? minHoliday : dInfo.isWeekend ? minWeekend : min;
         const total = matching.length;
+        const seniors = staffInShift.filter((s) => s.isSenior && !isHaStaff(s.name)).length;
+        const males = staffInShift.filter((s) => s.isMale && !isHaStaff(s.name)).length;
+
         return {
           total,
-          seniors: staffInShift.filter((s) => s.isSenior && !isHaStaff(s.name)).length,
-          males: staffInShift.filter((s) => s.isMale && !isHaStaff(s.name)).length,
+          seniors,
+          males,
           targetMin,
           isShort: total < targetMin,
+          seniorShort: seniors < config.minSenior,
+          maleOver: males > config.maxMale,
         };
       };
 
@@ -253,14 +258,12 @@ export class ShiftGrid {
         config.minNightHoliday ?? config.minNight,
       );
 
-      const label = dInfo.isHoliday ? 'Holiday' : dInfo.isWeekend ? 'Weekend' : 'Weekday';
       return {
         dateStr: dInfo.dateStr,
         isWeekend: dInfo.isWeekend,
         isHoliday: dInfo.isHoliday,
         isDivider: dInfo.isDivider,
-        minTitle: (kind: 'm' | 'e' | 'n') =>
-          `${label} Min Requirement: ${kind === 'm' ? m.targetMin : kind === 'e' ? e.targetMin : n.targetMin}`,
+        dayLabel: dInfo.isHoliday ? 'Holiday' : dInfo.isWeekend ? 'Weekend' : 'Weekday',
         m,
         e,
         n,
@@ -268,69 +271,33 @@ export class ShiftGrid {
     });
   });
 
-  // ---- Theme-derived class helpers (kept out of the template for readability) ----
-
-  readonly isNight = computed(() => this.theme() === 'Night');
-
-  readonly tableClass = computed(
-    () =>
-      ({
-        Professional: 'border-gray-200 shadow-md rounded-xl bg-white',
-        Colorful: 'border-emerald-200 shadow-xl rounded-2xl bg-white',
-        Attractive: 'border-white/50 shadow-2xl rounded-[2rem] border-2 bg-white/90',
-        Day: 'border-amber-100 shadow-xl rounded-3xl bg-white',
-        Night: 'border-slate-700/50 shadow-2xl rounded-xl bg-[#0d1117]',
-      })[this.theme()],
+  /** Total unfilled slots across the visible month, surfaced above the grid. */
+  readonly shortfallCount = computed(
+    () => this.stats().filter((s) => s.m.isShort).length
+      + this.stats().filter((s) => s.e.isShort).length
+      + this.stats().filter((s) => s.n.isShort).length,
   );
 
-  readonly headerBg = computed(
-    () =>
-      ({
-        Professional: 'bg-slate-50',
-        Colorful: 'bg-slate-50',
-        Attractive: 'bg-indigo-50/50',
-        Day: 'bg-amber-50/50',
-        Night: 'bg-[#161b22]',
-      })[this.theme()],
-  );
+  minTitle(s: DayStats, kind: 'm' | 'e' | 'n'): string {
+    const b = kind === 'm' ? s.m : kind === 'e' ? s.e : s.n;
+    return `${s.dayLabel} minimum: ${b.targetMin} · rostered: ${b.total}`;
+  }
 
-  readonly textPrimary = computed(() => (this.isNight() ? 'text-slate-300' : 'text-slate-900'));
-  readonly dividerClass = computed(() =>
-    this.isNight() ? 'border-r-2 border-r-slate-600' : 'border-r-2 border-r-gray-400',
-  );
-  readonly rowHoverClass = computed(() => {
-    switch (this.theme()) {
-      case 'Attractive':
-        return 'hover:bg-indigo-50/30';
-      case 'Night':
-        return 'hover:bg-slate-800/40';
-      default:
-        return 'hover:bg-blue-50/20';
-    }
-  });
-  readonly cpRowClass = computed(() =>
-    this.isNight() ? 'bg-violet-950/10 hover:bg-violet-950/20' : 'bg-violet-50/20 hover:bg-violet-50/35',
-  );
-  readonly stickyCellBg = computed(() => (this.isNight() ? 'bg-[#0d1117]' : 'bg-white'));
-  readonly stickyCpCellBg = computed(() => (this.isNight() ? 'bg-[#121620]' : 'bg-violet-50/50'));
-  readonly footerLabelBg = computed(() => (this.isNight() ? 'bg-slate-900' : 'bg-black/10'));
-  readonly subFooterLabelBg = computed(() => (this.isNight() ? 'bg-slate-800' : 'bg-slate-100'));
-  readonly subFooterRowClass = computed(() =>
-    this.isNight() ? 'bg-[#0d1117] text-slate-400' : 'bg-slate-50 text-slate-900',
-  );
-  /** Owns the legend box's corner radius outright — the template must not add one too. */
-  readonly legendBoxClass = computed(() => {
-    switch (this.theme()) {
-      case 'Attractive':
-        return 'bg-white/50 backdrop-blur-md border-white rounded-3xl';
-      case 'Night':
-        return 'bg-slate-800/40 border-slate-700/50 rounded-xl';
-      case 'Day':
-        return 'bg-amber-50/50 border-amber-100 rounded-3xl';
-      default:
-        return 'bg-slate-50 border-gray-100 rounded-xl';
-    }
-  });
+  /** The colour of a day-header number. Exactly one class, so order cannot decide it. */
+  dayNumberColor(d: DayInfo): string {
+    if (d.isHoliday) return 'text-rose-600 dark:text-rose-400';
+    if (d.isWeekend) return 'text-amber-600 dark:text-amber-400';
+    if (d.isContext) return 'text-slate-300 dark:text-slate-600';
+    return 'text-slate-700 dark:text-slate-200';
+  }
+
+  /** Header tint marking weekends and public holidays. */
+  dayHeaderClass(d: DayInfo): string {
+    if (d.isHoliday) return 'bg-rose-50 dark:bg-rose-500/10';
+    if (d.isWeekend) return 'bg-amber-50 dark:bg-amber-500/10';
+    if (d.isContext) return 'bg-slate-100/70 dark:bg-slate-800/50';
+    return '';
+  }
 
   legendLabel(shift: ShiftType): string {
     const key = shift as string;
@@ -338,19 +305,11 @@ export class ShiftGrid {
     return key === 'RW' ? 'W' : key.charAt(1);
   }
 
-  /** Legend swatch colours, with the theme's own ring removed for requested shifts. */
+  /** Legend swatch colours, with any baked-in ring removed for requested shifts. */
   legendSwatchClass(key: ShiftType): string {
-    const details = this.shiftDetails()[key];
+    const details = SHIFT_STYLES[key];
     const bg = key.startsWith('R') ? stripRings(details.bg) : details.bg;
     return `${bg} ${details.color}`;
-  }
-
-  /** The colour of a day-header number. Exactly one class, so order cannot decide it. */
-  dayNumberColor(d: DayInfo): string {
-    if (d.isHoliday) return 'text-rose-600';
-    if (d.isWeekend) return 'text-amber-600';
-    if (d.isContext) return 'text-gray-400';
-    return this.textPrimary();
   }
 
   // ---- Interaction ----
@@ -360,7 +319,7 @@ export class ShiftGrid {
     if (row.isCP) return;
 
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const menuEstimatedHeight = 350;
+    const menuEstimatedHeight = 340;
     const shouldFlip = rect.bottom + menuEstimatedHeight > window.innerHeight;
 
     this.activeCell.set({
@@ -383,7 +342,7 @@ export class ShiftGrid {
     const cell = this.activeCell();
     if (!cell) return;
     const [year, month, day] = cell.dateStr.split('-').map((p) => parseInt(p));
-    if (!window.confirm(`Set 15 continuous days of LEAVE (L) for ${cell.staffId}?`)) return;
+    if (!window.confirm(`Set 15 continuous days of leave for ${cell.staffId}, starting ${cell.dateStr}?`)) return;
 
     const batchUpdates: Assignment[] = [];
     const cursor = new Date(year, month - 1, day);
@@ -420,6 +379,6 @@ export class ShiftGrid {
   }
 
   menuLeft(cell: ActiveCell): string {
-    return `${Math.min(cell.viewportX, window.innerWidth - 220)}px`;
+    return `${Math.min(cell.viewportX, window.innerWidth - 240)}px`;
   }
 }

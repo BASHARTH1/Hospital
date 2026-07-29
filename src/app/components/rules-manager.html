@@ -1,355 +1,291 @@
-<div class="space-y-8">
-  <div class="flex items-center gap-3 mb-6">
-    <app-icon name="Settings" [size]="28" class="text-blue-500" />
-    <div>
-      <h2 class="text-2xl font-bold text-gray-800">Configuration &amp; Rules</h2>
-      <p class="text-sm text-gray-500">Optimize staffing levels and AI constraints</p>
-    </div>
+<div class="space-y-4">
+  <div>
+    <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Rules</h1>
+    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+      Staffing minimums and scheduling constraints applied when a roster is generated.
+    </p>
   </div>
 
-  <!-- Smart Manpower Insight Card -->
-  <div class="p-6 rounded-2xl border-2 shadow-sm transition-all" [class]="insightCardClass()">
-    <div class="flex flex-col lg:flex-row items-start lg:items-center gap-6">
-      <div class="p-4 rounded-xl" [class]="insightIconClass()">
-        <app-icon name="Sparkles" [size]="32" />
-      </div>
-      <div class="flex-1">
-        <h3 class="font-black text-xl text-gray-900 uppercase tracking-tight">Smart Manpower Insight</h3>
-        <p class="text-sm text-gray-600 font-medium">
-          Monthly Analysis for {{ config().month }} {{ config().year }}
+  <!-- Capacity summary -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Capacity for {{ config().month }} {{ config().year }}</h2>
+        <p class="card-subtitle">
+          Estimated against a 0.71 availability factor, for {{ isHAActive() ? 'HA' : 'regular' }} staff.
         </p>
+      </div>
+    </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-6">
-          <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-            <span class="text-[10px] font-black text-gray-400 uppercase block leading-tight">Min Required Personnel</span>
-            <div class="text-2xl font-black text-blue-600">{{ smartAnalysis().minStaffNeeded }}</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-            <span class="text-[10px] font-black text-gray-400 uppercase block leading-tight">Actual Staff Count</span>
-            <div class="text-2xl font-black text-gray-900">
-              {{ smartAnalysis().workingStaffCount }}
-              @if (staff().length > smartAnalysis().workingStaffCount) {
-                <span
-                  class="text-xs text-violet-500 font-bold ml-1"
-                  title="Counterpart staff not counted in requirements"
-                  >(+{{ staff().length - smartAnalysis().workingStaffCount }} CP)</span
-                >
-              }
-            </div>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-            <span class="text-[10px] font-black text-gray-400 uppercase block leading-tight">Total Duty Slots</span>
-            <div class="text-2xl font-black text-gray-900">{{ smartAnalysis().totalSlotsRequired }}</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-            <span class="text-[10px] font-black text-gray-400 uppercase block leading-tight">Max Staff on Leave</span>
-            <div
-              class="text-2xl font-black"
-              [class]="smartAnalysis().maxLeaveAllowed > 0 ? 'text-emerald-500' : 'text-red-500'"
-            >
-              {{ smartAnalysis().maxLeaveAllowed }}
-            </div>
-          </div>
-          <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm col-span-2 sm:col-span-1">
-            <span class="text-[10px] font-black text-gray-400 uppercase block leading-tight">Capacity Gap</span>
-            <div class="text-2xl font-black" [class]="smartAnalysis().deficit > 0 ? 'text-red-500' : 'text-emerald-500'">
-              {{ smartAnalysis().deficit > 0 ? '-' + smartAnalysis().deficit : 'Optimal' }}
-            </div>
-          </div>
-        </div>
+    <div class="grid grid-cols-2 gap-px bg-slate-200 dark:bg-slate-800 lg:grid-cols-5">
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Staff needed</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {{ smartAnalysis().minStaffNeeded }}
+        </p>
+      </div>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Staff available</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {{ smartAnalysis().workingStaffCount }}
+        </p>
+      </div>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Duty slots</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {{ smartAnalysis().totalSlotsRequired }}
+        </p>
+      </div>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Can take leave</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums" [class]="leaveClass()">
+          {{ smartAnalysis().maxLeaveAllowed }}
+        </p>
+      </div>
+      <div class="col-span-2 bg-white p-4 dark:bg-slate-900 lg:col-span-1">
+        <p class="section-label">Capacity gap</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums" [class]="deficitClass()">
+          {{ smartAnalysis().deficit > 0 ? '−' + smartAnalysis().deficit : 'None' }}
+        </p>
+      </div>
+    </div>
 
-        <div class="mt-6 flex items-center gap-3 px-4 py-2 bg-white/60 rounded-lg border border-white">
-          <div class="w-3 h-3 rounded-full animate-pulse" [class]="insightDotClass()"></div>
-          <p class="text-sm font-bold text-gray-700">{{ insightMessage() }}</p>
-        </div>
+    <div class="border-t border-slate-200 p-3 dark:border-slate-800">
+      <div class="flex items-start gap-2 rounded-md border px-3 py-2 text-xs font-medium" [class]="insightBannerClass()">
+        <app-icon [name]="$any(insightIcon())" [size]="15" class="mt-px shrink-0" />
+        <span>{{ insightMessage() }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Category rules selector tabs -->
-  <div class="flex bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200 shadow-sm">
-    <button
-      type="button"
-      (click)="activeCategory.set('regular')"
-      class="px-6 py-3 rounded-xl text-sm font-black transition-all flex items-center gap-2.5"
-      [class]="
-        activeCategory() === 'regular' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-500 hover:text-slate-800'
-      "
-    >
-      <app-icon name="Users" [size]="18" /> Regular Staff Rules
-    </button>
-    <button
-      type="button"
-      (click)="activeCategory.set('ha')"
-      class="px-6 py-3 rounded-xl text-sm font-black transition-all flex items-center gap-2.5"
-      [class]="
-        activeCategory() === 'ha' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-emerald-700'
-      "
-    >
-      <app-icon name="Sparkles" [size]="18" /> (HA) Staff Rules
-    </button>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="space-y-6 lg:col-span-1">
-      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-        <h3 class="font-bold text-gray-800 flex items-center gap-2">
-          <app-icon name="CalendarIcon" [size]="18" class="text-blue-500" />
-          Roster Details &amp; Ward
-        </h3>
-        <div class="space-y-4">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <!-- Period & holidays -->
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Roster period</h2></div>
+        <div class="card-body space-y-3">
           <div>
-            <label class="text-[10px] font-black text-gray-400 uppercase block mb-2">Ward / Department Name</label>
+            <label for="ward" class="label">Ward / department</label>
             <input
+              id="ward"
               type="text"
               [value]="config().wardName || ''"
               (input)="handleChange('wardName', $any($event.target).value)"
               placeholder="e.g. ICU, CCU, Ward 3"
-              class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+              class="input"
             />
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-[10px] font-black text-gray-400 uppercase block mb-2">Year</label>
+              <label for="month" class="label">Month</label>
               <select
-                (change)="handleChange('year', +$any($event.target).value)"
-                class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                @for (y of years; track y) {
-                  <option [value]="y" [selected]="y === config().year">{{ y }}</option>
-                }
-              </select>
-            </div>
-            <div>
-              <label class="text-[10px] font-black text-gray-400 uppercase block mb-2">Month</label>
-              <select
+                id="month"
                 (change)="handleChange('month', $any($event.target).value)"
-                class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                class="input"
               >
                 @for (m of months; track m) {
                   <option [value]="m" [selected]="m === config().month">{{ m }}</option>
                 }
               </select>
             </div>
+            <div>
+              <label for="year" class="label">Year</label>
+              <select id="year" (change)="handleChange('year', +$any($event.target).value)" class="input">
+                @for (y of years; track y) {
+                  <option [value]="y" [selected]="y === config().year">{{ y }}</option>
+                }
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 flex items-center gap-2">
-          <span class="p-1 bg-rose-500 text-white rounded-lg flex items-center justify-center">
-            <app-icon name="Sparkles" [size]="14" />
-          </span>
-          Public Holidays
-        </h3>
-        <p class="text-xs text-gray-500 font-medium leading-relaxed">
-          Click on the days below to designate them as public holidays for this month.
-        </p>
-        <div class="grid grid-cols-7 gap-1 max-h-[160px] overflow-y-auto pr-1">
-          @for (d of holidayDays(); track d.dateStr) {
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Public holidays</h2>
+            <p class="card-subtitle">Selected days use the holiday minimums.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-cols-7 gap-1">
+            @for (d of holidayDays(); track d.dateStr) {
+              <button
+                type="button"
+                (click)="toggleHoliday(d.day)"
+                class="flex flex-col items-center justify-center rounded border py-1 transition-colors"
+                [class]="
+                  d.isSelected
+                    ? 'border-rose-300 bg-rose-100 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300'
+                    : d.isWeekend
+                      ? 'border-slate-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-slate-700 dark:bg-amber-500/10 dark:text-amber-400'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                "
+                [attr.aria-pressed]="d.isSelected"
+              >
+                <span class="text-[11px] font-medium leading-none">{{ d.day }}</span>
+                <span class="mt-0.5 text-[8px] uppercase leading-none opacity-70">{{ d.dayOfWeekName }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minimum staffing -->
+    <div class="lg:col-span-2">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Minimum staffing per shift</h2>
+            <p class="card-subtitle">Applies to the selected staff category.</p>
+          </div>
+
+          <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
             <button
               type="button"
-              (click)="toggleHoliday(d.day)"
-              class="flex flex-col items-center justify-center p-1 border rounded-lg text-center transition-all hover:scale-105 active:scale-95"
-              style="min-width: 28px"
+              (click)="activeCategory.set('regular')"
+              class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
               [class]="
-                d.isSelected
-                  ? 'bg-rose-600 border-rose-700 text-white shadow-sm font-black ring-2 ring-rose-200'
-                  : d.isWeekend
-                    ? 'bg-amber-50 border-amber-100 text-amber-800 hover:bg-amber-100 font-bold'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                activeCategory() === 'regular'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
               "
             >
-              <span class="text-[10px] font-black">{{ d.day }}</span>
-              <span class="text-[6px] uppercase font-bold opacity-75">{{ d.dayOfWeekName }}</span>
+              Regular
             </button>
+            <button
+              type="button"
+              (click)="activeCategory.set('ha')"
+              class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
+              [class]="
+                activeCategory() === 'ha'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+              "
+            >
+              HA
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th class="pb-2 text-left text-xs font-medium uppercase tracking-wide text-slate-400">Shift</th>
+                <th class="pb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-400">Weekday</th>
+                <th class="pb-2 text-center text-xs font-medium uppercase tracking-wide text-amber-500">Weekend</th>
+                <th class="pb-2 text-center text-xs font-medium uppercase tracking-wide text-rose-500">Holiday</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr>
+                <td class="py-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <span class="mr-2 inline-block h-2 w-2 rounded-full bg-sky-400 align-middle"></span>Morning
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minMorning', 'haMinMorning')"
+                    (input)="handleValueChange('minMorning', 'haMinMorning', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum morning staff on weekdays" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minMorningWeekend', 'haMinMorningWeekend')"
+                    (input)="handleValueChange('minMorningWeekend', 'haMinMorningWeekend', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum morning staff at weekends" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minMorningHoliday', 'haMinMorningHoliday')"
+                    (input)="handleValueChange('minMorningHoliday', 'haMinMorningHoliday', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum morning staff on holidays" />
+                </td>
+              </tr>
+              <tr>
+                <td class="py-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <span class="mr-2 inline-block h-2 w-2 rounded-full bg-violet-400 align-middle"></span>Evening
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minEvening', 'haMinEvening')"
+                    (input)="handleValueChange('minEvening', 'haMinEvening', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum evening staff on weekdays" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minEveningWeekend', 'haMinEveningWeekend')"
+                    (input)="handleValueChange('minEveningWeekend', 'haMinEveningWeekend', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum evening staff at weekends" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minEveningHoliday', 'haMinEveningHoliday')"
+                    (input)="handleValueChange('minEveningHoliday', 'haMinEveningHoliday', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum evening staff on holidays" />
+                </td>
+              </tr>
+              <tr>
+                <td class="py-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <span class="mr-2 inline-block h-2 w-2 rounded-full bg-slate-500 align-middle"></span>Night
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minNight', 'haMinNight')"
+                    (input)="handleValueChange('minNight', 'haMinNight', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum night staff on weekdays" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minNightWeekend', 'haMinNightWeekend')"
+                    (input)="handleValueChange('minNightWeekend', 'haMinNightWeekend', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum night staff at weekends" />
+                </td>
+                <td class="py-2 text-center">
+                  <input type="number" min="0" [value]="getValue('minNightHoliday', 'haMinNightHoliday')"
+                    (input)="handleValueChange('minNightHoliday', 'haMinNightHoliday', $any($event.target).value)"
+                    class="input input-sm w-16 text-center" aria-label="Minimum night staff on holidays" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Constraints -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Scheduling constraints</h2>
+            <p class="card-subtitle">{{ isHAActive() ? 'HA staff' : 'Regular staff' }}</p>
+          </div>
+        </div>
+        <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+          @if (isHAActive()) {
+            <div class="rounded-md border border-dashed border-slate-200 p-3 dark:border-slate-700">
+              <p class="section-label">Seniority &amp; gender balance</p>
+              <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">Not applied to HA staff.</p>
+            </div>
+          } @else {
+            <div>
+              <label for="min-senior" class="label">Minimum seniors per shift</label>
+              <input id="min-senior" type="number" min="0" [value]="getValue('minSenior', 'haMinSenior')"
+                (input)="handleValueChange('minSenior', 'haMinSenior', $any($event.target).value)" class="input" />
+            </div>
+            <div>
+              <label for="max-male" class="label">Maximum male staff per shift</label>
+              <input id="max-male" type="number" min="0" [value]="getValue('maxMale', 'haMaxMale')"
+                (input)="handleValueChange('maxMale', 'haMaxMale', $any($event.target).value)" class="input" />
+            </div>
           }
-        </div>
-      </div>
-    </div>
 
-    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6 lg:col-span-2">
-      <h3 class="font-bold text-gray-800 flex items-center gap-2">
-        <app-icon name="Users" [size]="18" class="text-emerald-500" />
-        Min Staffing per Shift
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="space-y-4">
-          <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1">
-            Weekdays (Sun – Thu)
-          </h4>
-          <div class="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
-            <span class="font-bold text-emerald-800 text-sm">Morning (Shift 1)</span>
-            <input
-              type="number"
-              [value]="getValue('minMorning', 'haMinMorning')"
-              (input)="handleValueChange('minMorning', 'haMinMorning', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-emerald-200 rounded-lg text-center font-black focus:ring-2 focus:ring-emerald-400 outline-none"
-            />
+          <div>
+            <label for="max-consec" class="label">Maximum consecutive duty days</label>
+            <input id="max-consec" type="number" min="0" [value]="getValue('maxConsecutiveDuty', 'haMaxConsecutiveDuty')"
+              (input)="handleValueChange('maxConsecutiveDuty', 'haMaxConsecutiveDuty', $any($event.target).value)"
+              class="input" />
           </div>
-          <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-            <span class="font-bold text-blue-800 text-sm">Evening (Shift 2)</span>
-            <input
-              type="number"
-              [value]="getValue('minEvening', 'haMinEvening')"
-              (input)="handleValueChange('minEvening', 'haMinEvening', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-blue-200 rounded-lg text-center font-black focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-          </div>
-          <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-xl">
-            <span class="font-bold text-indigo-800 text-sm">Night (Shift 3)</span>
-            <input
-              type="number"
-              [value]="getValue('minNight', 'haMinNight')"
-              (input)="handleValueChange('minNight', 'haMinNight', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-indigo-200 rounded-lg text-center font-black focus:ring-2 focus:ring-indigo-400 outline-none"
-            />
-          </div>
-        </div>
-
-        <div class="space-y-4">
-          <h4 class="text-xs font-black text-amber-500 uppercase tracking-widest border-b border-amber-50 pb-1">
-            Weekends (Fri – Sat)
-          </h4>
-          <div class="flex items-center justify-between p-3 bg-emerald-50/50 rounded-xl border border-dashed border-emerald-200">
-            <span class="font-bold text-emerald-800 text-sm">Morning (Shift 1)</span>
-            <input
-              type="number"
-              [value]="getValue('minMorningWeekend', 'haMinMorningWeekend')"
-              (input)="handleValueChange('minMorningWeekend', 'haMinMorningWeekend', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-emerald-200 rounded-lg text-center font-black focus:ring-2 focus:ring-emerald-400 outline-none"
-            />
-          </div>
-          <div class="flex items-center justify-between p-3 bg-blue-50/50 rounded-xl border border-dashed border-blue-200">
-            <span class="font-bold text-blue-800 text-sm">Evening (Shift 2)</span>
-            <input
-              type="number"
-              [value]="getValue('minEveningWeekend', 'haMinEveningWeekend')"
-              (input)="handleValueChange('minEveningWeekend', 'haMinEveningWeekend', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-blue-200 rounded-lg text-center font-black focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-          </div>
-          <div class="flex items-center justify-between p-3 bg-indigo-50/50 rounded-xl border border-dashed border-indigo-200">
-            <span class="font-bold text-indigo-800 text-sm">Night (Shift 3)</span>
-            <input
-              type="number"
-              [value]="getValue('minNightWeekend', 'haMinNightWeekend')"
-              (input)="handleValueChange('minNightWeekend', 'haMinNightWeekend', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-indigo-200 rounded-lg text-center font-black focus:ring-2 focus:ring-indigo-400 outline-none"
-            />
-          </div>
-        </div>
-
-        <div class="space-y-4">
-          <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest border-b border-rose-50 pb-1">
-            Holidays (Selected)
-          </h4>
-          <div class="flex items-center justify-between p-3 bg-rose-50/40 rounded-xl border border-dotted border-rose-200">
-            <span class="font-bold text-rose-800 text-sm">Morning (Shift 1)</span>
-            <input
-              type="number"
-              [value]="getValue('minMorningHoliday', 'haMinMorningHoliday')"
-              (input)="handleValueChange('minMorningHoliday', 'haMinMorningHoliday', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-rose-200 rounded-lg text-center font-black focus:ring-2 focus:ring-rose-400 outline-none"
-            />
-          </div>
-          <div class="flex items-center justify-between p-3 bg-rose-50/40 rounded-xl border border-dotted border-rose-200">
-            <span class="font-bold text-rose-800 text-sm">Evening (Shift 2)</span>
-            <input
-              type="number"
-              [value]="getValue('minEveningHoliday', 'haMinEveningHoliday')"
-              (input)="handleValueChange('minEveningHoliday', 'haMinEveningHoliday', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-rose-200 rounded-lg text-center font-black focus:ring-2 focus:ring-rose-400 outline-none"
-            />
-          </div>
-          <div class="flex items-center justify-between p-3 bg-rose-50/40 rounded-xl border border-dotted border-rose-200">
-            <span class="font-bold text-rose-800 text-sm">Night (Shift 3)</span>
-            <input
-              type="number"
-              [value]="getValue('minNightHoliday', 'haMinNightHoliday')"
-              (input)="handleValueChange('minNightHoliday', 'haMinNightHoliday', $any($event.target).value)"
-              class="w-14 p-2 bg-white border border-rose-200 rounded-lg text-center font-black focus:ring-2 focus:ring-rose-400 outline-none"
-            />
+          <div>
+            <label for="off-after-night" class="label">Rest days after a night series</label>
+            <input id="off-after-night" type="number" min="0" [value]="getValue('offAfterNight', 'haOffAfterNight')"
+              (input)="handleValueChange('offAfterNight', 'haOffAfterNight', $any($event.target).value)"
+              class="input" />
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl border border-slate-800">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="p-2 bg-blue-500 rounded-lg">
-        <app-icon name="CheckCircle2" [size]="24" />
-      </div>
-      <h3 class="text-xl font-black uppercase tracking-widest">
-        Advanced Rule Engine ({{ isHAActive() ? 'HA Staff' : 'Regular Staff' }})
-      </h3>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-      <div class="space-y-6">
-        @if (isHAActive()) {
-          <div class="bg-slate-800/50 p-4 border border-slate-800 rounded-2xl flex flex-col justify-center h-[90px]">
-            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Seniority Requirements</span>
-            <span class="text-xs font-bold text-slate-400 mt-1 uppercase">Not considered for HA Staff</span>
-          </div>
-        } @else {
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Min Seniors per Shift</label>
-            <input
-              type="number"
-              [value]="getValue('minSenior', 'haMinSenior')"
-              (input)="handleValueChange('minSenior', 'haMinSenior', $any($event.target).value)"
-              class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-black text-white"
-            />
-          </div>
-        }
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max Total Consecutive Days</label>
-          <input
-            type="number"
-            [value]="getValue('maxConsecutiveDuty', 'haMaxConsecutiveDuty')"
-            (input)="handleValueChange('maxConsecutiveDuty', 'haMaxConsecutiveDuty', $any($event.target).value)"
-            class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-black text-white"
-          />
-        </div>
-      </div>
-      <div class="space-y-6">
-        @if (isHAActive()) {
-          <div class="bg-slate-800/50 p-4 border border-slate-800 rounded-2xl flex flex-col justify-center h-[90px]">
-            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gender Balance Rules</span>
-            <span class="text-xs font-bold text-slate-400 mt-1 uppercase">Not considered for HA Staff</span>
-          </div>
-        } @else {
-          <div class="space-y-2">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max Male Staff per Shift</label>
-            <input
-              type="number"
-              [value]="getValue('maxMale', 'haMaxMale')"
-              (input)="handleValueChange('maxMale', 'haMaxMale', $any($event.target).value)"
-              class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-black text-white"
-            />
-          </div>
-        }
-        <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Off Days After Night</label>
-          <input
-            type="number"
-            [value]="getValue('offAfterNight', 'haOffAfterNight')"
-            (input)="handleValueChange('offAfterNight', 'haOffAfterNight', $any($event.target).value)"
-            class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-black text-white"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="flex justify-end pt-4">
-    <button
-      type="button"
-      class="px-10 py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition shadow-xl flex items-center gap-3"
-    >
-      <app-icon name="Save" [size]="24" />
-      Save Global Config
-    </button>
   </div>
 </div>

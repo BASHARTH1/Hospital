@@ -17,7 +17,10 @@ export type IconName =
   | 'Palette'
   | 'Printer'
   | 'Info'
-  | 'Phone';
+  | 'Phone'
+  | 'Sun'
+  | 'Moon'
+  | 'Activity';
 
 /**
  * Inline Lucide-style icon set. Replaces `lucide-react` from the original app so
@@ -130,6 +133,23 @@ export type IconName =
           <path
             d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
           />
+        }
+        @case ('Sun') {
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        }
+        @case ('Moon') {
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        }
+        @case ('Activity') {
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
         }
       }
     </svg>

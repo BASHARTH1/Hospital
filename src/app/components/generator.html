@@ -1,166 +1,191 @@
-<div class="space-y-8">
-  <div class="border border-gray-200 rounded-xl overflow-hidden">
-    <div class="p-6 border-b border-gray-100">
-      <h2 class="text-xl font-semibold flex items-center gap-2">
-        <app-icon name="Sparkles" [size]="24" class="text-teal-500" />
-        Schedule Generator
-      </h2>
-      <p class="text-sm text-gray-500">Build an optimized monthly schedule from your staff list and rules</p>
-    </div>
+<div class="mx-auto max-w-4xl space-y-4">
+  <div>
+    <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Generate roster</h1>
+    <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+      Build a full month for {{ config().month }} {{ config().year }}. Existing manual entries are kept as fixed
+      anchors.
+    </p>
+  </div>
 
-    <!-- Engine selector -->
-    <div class="p-6 border-b border-gray-100 space-y-3">
-      <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Generation Engine</span>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button
-          type="button"
-          (click)="setEngine('local')"
-          class="text-left p-4 rounded-xl border-2 transition-all"
-          [class]="
-            engine() === 'local'
-              ? 'border-teal-500 bg-teal-50/60 shadow-sm'
-              : 'border-gray-200 bg-white hover:border-gray-300'
-          "
-        >
-          <div class="flex items-center gap-2 mb-1">
-            <app-icon name="CheckCircle2" [size]="16" [class]="engine() === 'local' ? 'text-teal-600' : 'text-gray-300'" />
-            <span class="font-black text-sm text-gray-800">Local Rule Engine</span>
-            <span class="text-[9px] font-black uppercase bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded"
-              >No API key</span
-            >
-          </div>
-          <p class="text-xs text-gray-500 font-medium leading-relaxed">
-            Deterministic scheduler that runs in the browser. Same result every time, works offline.
-          </p>
-        </button>
-
-        <button
-          type="button"
-          (click)="setEngine('ai')"
-          class="text-left p-4 rounded-xl border-2 transition-all"
-          [class]="
-            engine() === 'ai' ? 'border-teal-500 bg-teal-50/60 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
-          "
-        >
-          <div class="flex items-center gap-2 mb-1">
-            <app-icon name="Sparkles" [size]="16" [class]="engine() === 'ai' ? 'text-teal-600' : 'text-gray-300'" />
-            <span class="font-black text-sm text-gray-800">Gemini AI</span>
-            @if (hasApiKey()) {
-              <span class="text-[9px] font-black uppercase bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded"
-                >Key set</span
-              >
-            } @else {
-              <span class="text-[9px] font-black uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded"
-                >Key required</span
-              >
-            }
-          </div>
-          <p class="text-xs text-gray-500 font-medium leading-relaxed">
-            Sends the staff list and rules to Gemini 3 Pro. Needs an API key and network access.
-          </p>
-        </button>
-      </div>
-    </div>
-
-    <div class="p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-        <span class="text-xs text-gray-400 uppercase font-medium">Rostered Staff</span>
-        <div class="text-3xl font-bold mt-1">
-          {{ rosterStaff().length }}
-          @if (haCount() > 0) {
-            <span class="text-sm text-emerald-600 font-bold">({{ haCount() }} HA)</span>
-          }
-          @if (counterpartCount() > 0) {
-            <span class="text-sm text-violet-500 font-bold">+{{ counterpartCount() }} CP</span>
-          }
-        </div>
-      </div>
-      <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-        <span class="text-xs text-gray-400 uppercase font-medium">Schedule Period</span>
-        <div class="text-3xl font-bold mt-1">{{ config().month }} {{ config().year }}</div>
-      </div>
-      <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-        <span class="text-xs text-gray-400 uppercase font-medium">Min Staff/Shift</span>
-        <div class="text-3xl font-bold mt-1">{{ config().minMorning }}</div>
-      </div>
-    </div>
-
-    <div class="p-6 space-y-4">
-      <h3 class="font-semibold text-gray-700">
-        {{ engine() === 'local' ? 'Rule engine guarantees:' : 'AI Scheduler Features:' }}
-      </h3>
-      <ul class="space-y-2">
-        @for (feature of features(); track feature) {
-          <li class="flex items-center gap-3 text-sm text-gray-600">
-            <app-icon name="CheckCircle2" [size]="16" class="text-teal-500" />
-            {{ feature }}
-          </li>
-        }
-      </ul>
-    </div>
-
-    @if (error(); as message) {
-      <div class="mx-6 mb-6 p-4 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm">{{ message }}</div>
-    }
-
-    @if (report(); as r) {
-      <div class="mx-6 mb-6 space-y-3">
-        @if (r.shortfalls.length === 0 && r.seniorGaps.length === 0) {
-          <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-bold flex items-center gap-2">
-            <app-icon name="CheckCircle2" [size]="18" />
-            Roster complete — every minimum met across {{ r.daysInMonth }} days
-            ({{ r.dutiesAssigned }} duties assigned, {{ r.anchorsPreserved }} manual entries preserved).
-          </div>
-        } @else {
-          <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-            <div class="flex items-center gap-2 text-amber-900 font-black text-sm">
-              <app-icon name="Info" [size]="18" />
-              Roster generated with unmet requirements
-            </div>
-            <p class="text-xs text-amber-800 font-medium leading-relaxed">
-              {{ r.dutiesAssigned }} duties assigned over {{ r.daysInMonth }} days, {{ r.anchorsPreserved }} manual
-              entries preserved. The slots below could not be filled without breaking a rule — add staff, or relax the
-              minimums on the Rules tab.
-            </p>
-            <ul class="space-y-1.5">
-              @for (s of shortfallSummary(); track s.category + s.shift) {
-                <li class="text-xs font-bold text-amber-900 bg-white/70 border border-amber-100 rounded-lg px-3 py-2">
-                  {{ s.category }} · {{ s.shift }} — short on {{ s.days }}
-                  {{ s.days === 1 ? 'day' : 'days' }} (up to {{ s.worstGap }} staff missing)
-                </li>
-              }
-              @if (seniorGapDays() > 0) {
-                <li class="text-xs font-bold text-amber-900 bg-white/70 border border-amber-100 rounded-lg px-3 py-2">
-                  Seniority — below the minimum on {{ seniorGapDays() }} shift{{ seniorGapDays() === 1 ? '' : 's' }}
-                </li>
-              }
-            </ul>
-            <p class="text-[11px] text-amber-700 font-bold uppercase tracking-wide">
-              The roster is already on the Calendar tab — unfilled slots show in red on the totals rows.
-            </p>
-          </div>
-        }
-      </div>
-    }
-
-    <div class="p-6 bg-slate-50 border-t border-gray-100">
+  <!-- Engine -->
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">Engine</h2></div>
+    <div class="card-body grid grid-cols-1 gap-3 sm:grid-cols-2">
       <button
         type="button"
-        [disabled]="isGenerating()"
-        (click)="generate()"
-        class="w-full flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-lg transition"
+        (click)="setEngine('local')"
+        class="rounded-lg border p-3 text-left transition-colors"
         [class]="
-          isGenerating() ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-[#1e293b] text-white hover:bg-slate-700 shadow-lg'
+          engine() === 'local'
+            ? 'border-brand-500 bg-brand-50/60 ring-1 ring-brand-500 dark:bg-brand-500/10'
+            : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'
         "
+        [attr.aria-pressed]="engine() === 'local'"
       >
-        @if (isGenerating()) {
-          <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-          {{ engine() === 'local' ? 'Building the schedule...' : 'AI is crunching the schedule...' }}
-        } @else {
-          <app-icon name="Sparkles" [size]="20" />
-          {{ engine() === 'local' ? 'Generate Schedule' : 'Generate AI-Powered Schedule' }}
-        }
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-slate-900 dark:text-slate-100">Rule engine</span>
+          <span class="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+            No API key
+          </span>
+        </div>
+        <p class="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Deterministic and offline. Same input always produces the same roster.
+        </p>
+      </button>
+
+      <button
+        type="button"
+        (click)="setEngine('ai')"
+        class="rounded-lg border p-3 text-left transition-colors"
+        [class]="
+          engine() === 'ai'
+            ? 'border-brand-500 bg-brand-50/60 ring-1 ring-brand-500 dark:bg-brand-500/10'
+            : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'
+        "
+        [attr.aria-pressed]="engine() === 'ai'"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-slate-900 dark:text-slate-100">Gemini</span>
+          @if (hasApiKey()) {
+            <span class="badge bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">Key set</span>
+          } @else {
+            <span class="badge bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Key required</span>
+          }
+        </div>
+        <p class="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Sends the staff list and rules to Gemini 3 Pro. Requires an API key and network access.
+        </p>
       </button>
     </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card">
+    <div class="grid grid-cols-3 gap-px bg-slate-200 dark:bg-slate-800">
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Rostered staff</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {{ rosterStaff().length }}
+        </p>
+        <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+          @if (haCount() > 0) {
+            {{ haCount() }} HA
+          }
+          @if (haCount() > 0 && counterpartCount() > 0) {
+            ·
+          }
+          @if (counterpartCount() > 0) {
+            {{ counterpartCount() }} counterpart mirrored
+          }
+        </p>
+      </div>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Period</p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ config().month }}</p>
+        <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{{ config().year }}</p>
+      </div>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <p class="section-label">Min per shift</p>
+        <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+          {{ config().minMorning }}
+        </p>
+        <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">weekday morning</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guarantees -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">{{ engine() === 'local' ? 'What the rule engine guarantees' : 'What the model is asked to respect' }}</h2>
+    </div>
+    <ul class="card-body grid grid-cols-1 gap-2 sm:grid-cols-2">
+      @for (feature of features(); track feature) {
+        <li class="flex items-start gap-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+          <app-icon name="CheckCircle2" [size]="14" class="mt-px shrink-0 text-emerald-500" />
+          {{ feature }}
+        </li>
+      }
+    </ul>
+  </div>
+
+  @if (error(); as message) {
+    <div
+      class="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-800
+        dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
+    >
+      <app-icon name="Info" [size]="15" class="mt-px shrink-0" />
+      <span>{{ message }}</span>
+    </div>
+  }
+
+  @if (report(); as r) {
+    @if (r.shortfalls.length === 0 && r.seniorGaps.length === 0) {
+      <div
+        class="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs
+          text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+      >
+        <app-icon name="CheckCircle2" [size]="15" class="mt-px shrink-0" />
+        <span>
+          Roster complete — every minimum met across {{ r.daysInMonth }} days.
+          {{ r.dutiesAssigned }} duties assigned, {{ r.anchorsPreserved }} manual entries preserved.
+        </span>
+      </div>
+    } @else {
+      <div class="card border-amber-200 dark:border-amber-500/30">
+        <div class="card-header border-amber-200 dark:border-amber-500/30">
+          <h2 class="card-title text-amber-800 dark:text-amber-300">
+            <app-icon name="Info" [size]="16" />
+            Generated with unmet requirements
+          </h2>
+        </div>
+        <div class="card-body space-y-2">
+          <p class="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            {{ r.dutiesAssigned }} duties assigned over {{ r.daysInMonth }} days,
+            {{ r.anchorsPreserved }} manual entries preserved. These slots could not be filled without breaking a
+            rule — add staff, or lower the minimums.
+          </p>
+          <ul class="space-y-1">
+            @for (s of shortfallSummary(); track s.category + s.shift) {
+              <li
+                class="flex items-center justify-between rounded border border-slate-200 px-2.5 py-1.5 text-xs
+                  dark:border-slate-700"
+              >
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ s.category }} · {{ s.shift }}</span>
+                <span class="text-slate-500 dark:text-slate-400">
+                  short on {{ s.days }} {{ s.days === 1 ? 'day' : 'days' }} · up to {{ s.worstGap }} missing
+                </span>
+              </li>
+            }
+            @if (seniorGapDays() > 0) {
+              <li
+                class="flex items-center justify-between rounded border border-slate-200 px-2.5 py-1.5 text-xs
+                  dark:border-slate-700"
+              >
+                <span class="font-medium text-slate-700 dark:text-slate-200">Seniority</span>
+                <span class="text-slate-500 dark:text-slate-400">
+                  below minimum on {{ seniorGapDays() }} shift{{ seniorGapDays() === 1 ? '' : 's' }}
+                </span>
+              </li>
+            }
+          </ul>
+          <p class="text-xs text-slate-400 dark:text-slate-500">
+            The roster is on the Calendar tab; unfilled slots are highlighted in the totals rows.
+          </p>
+        </div>
+      </div>
+    }
+  }
+
+  <div class="flex justify-end">
+    <button type="button" [disabled]="isGenerating()" (click)="generate()" class="btn-primary px-5 py-2.5">
+      @if (isGenerating()) {
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+        {{ engine() === 'local' ? 'Building schedule…' : 'Generating…' }}
+      } @else {
+        <app-icon name="Sparkles" [size]="16" />
+        Generate roster
+      }
+    </button>
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { MONTHS } from '../constants';
 import { Assignment, RosterConfig, ShiftType, StaffMember, TabType, ThemeType, pad2 } from '../models/types';
 
@@ -44,6 +44,19 @@ const INITIAL_CONFIG: RosterConfig = {
   haOffAfterNight: 2,
 };
 
+const THEME_STORAGE_KEY = 'roster_theme';
+
+/** Remembered theme, else the operating system preference. */
+function readStoredTheme(): ThemeType {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'Light' || saved === 'Dark') return saved;
+  } catch {
+    // Ignore and fall through to the system preference.
+  }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light';
+}
+
 function downloadCsv(rows: (string | number)[][], filename: string): void {
   const csvContent = rows.map((e) => e.join(',')).join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -64,7 +77,26 @@ export class RosterStore {
   readonly staff = signal<StaffMember[]>(INITIAL_STAFF);
   readonly config = signal<RosterConfig>(INITIAL_CONFIG);
   readonly assignments = signal<Assignment[]>([]);
-  readonly theme = signal<ThemeType>('Professional');
+  readonly theme = signal<ThemeType>(readStoredTheme());
+
+  constructor() {
+    // Theming is a single `dark` class on <html>; components use `dark:` variants.
+    effect(() => {
+      const theme = this.theme();
+      document.documentElement.classList.toggle('dark', theme === 'Dark');
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // Storage can be unavailable (private mode); the theme still applies.
+      }
+    });
+
+    // Roster sheets are always printed light, whatever is on screen.
+    window.addEventListener('beforeprint', () => document.documentElement.classList.remove('dark'));
+    window.addEventListener('afterprint', () =>
+      document.documentElement.classList.toggle('dark', this.theme() === 'Dark'),
+    );
+  }
 
   /** Assignments plus the mirrored duties of every counterpart staff member. */
   readonly resolvedAssignments = computed<Assignment[]>(() => {

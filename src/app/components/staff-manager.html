@@ -1,174 +1,168 @@
-<div>
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+<div class="space-y-4">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
     <div>
-      <h2 class="text-2xl font-bold text-gray-800">Staff Management ({{ staff().length }})</h2>
-      @if (activeSelectedIds().length > 0) {
-        <p class="text-sm text-blue-600 font-bold mt-1">
-          {{ activeSelectedIds().length }} staff selected for action
-        </p>
-      }
+      <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Staff</h1>
+      <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+        <span>{{ counts().total }} on the roster</span>
+        <span class="text-slate-300 dark:text-slate-700">·</span>
+        <span>{{ counts().regular }} regular</span>
+        @if (counts().ha > 0) {
+          <span class="text-slate-300 dark:text-slate-700">·</span>
+          <span class="text-emerald-700 dark:text-emerald-400">{{ counts().ha }} HA</span>
+        }
+        @if (counts().counterparts > 0) {
+          <span class="text-slate-300 dark:text-slate-700">·</span>
+          <span class="text-violet-600 dark:text-violet-400">{{ counts().counterparts }} counterpart</span>
+        }
+      </p>
     </div>
+
     <div class="flex flex-wrap gap-2">
       <input type="file" #fileInput (change)="onFileChange($event)" accept=".csv" class="hidden" />
 
-      <button
-        type="button"
-        [disabled]="activeSelectedIds().length === 0"
-        (click)="delete(activeSelectedIds())"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold border"
-        [class]="
-          activeSelectedIds().length > 0
-            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-600 hover:text-white'
-            : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
-        "
-      >
-        <app-icon name="Trash2" [size]="18" /> Delete Selected
+      @if (activeSelectedIds().length > 0) {
+        <button type="button" (click)="delete(activeSelectedIds())" class="btn-danger">
+          <app-icon name="Trash2" [size]="15" /> Delete {{ activeSelectedIds().length }}
+        </button>
+      }
+      <button type="button" (click)="fileInput.click()" class="btn-secondary">
+        <app-icon name="Upload" [size]="15" /> Import
       </button>
-
-      <button
-        type="button"
-        (click)="exportCsv.emit()"
-        class="flex items-center gap-2 px-4 py-2 border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-bold"
-      >
-        <app-icon name="Download" [size]="18" /> Export CSV
+      <button type="button" (click)="exportCsv.emit()" class="btn-secondary">
+        <app-icon name="Download" [size]="15" /> Export
       </button>
-      <button
-        type="button"
-        (click)="fileInput.click()"
-        class="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-bold"
-      >
-        <app-icon name="Upload" [size]="18" /> Import CSV
+      <button type="button" (click)="addHa.emit()" class="btn-secondary">
+        <app-icon name="Plus" [size]="15" /> HA staff
       </button>
-      <button
-        type="button"
-        (click)="add.emit()"
-        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md font-bold"
-      >
-        <app-icon name="Plus" [size]="18" /> Add Staff
+      <button type="button" (click)="addCounterPart.emit()" class="btn-secondary">
+        <app-icon name="Plus" [size]="15" /> Counterpart
       </button>
-      <button
-        type="button"
-        (click)="addHa.emit()"
-        class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-md font-bold"
-      >
-        <app-icon name="Plus" [size]="18" /> Add HA Staff
-      </button>
-      <button
-        type="button"
-        (click)="addCounterPart.emit()"
-        class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition shadow-md font-bold"
-      >
-        <app-icon name="Plus" [size]="18" /> Add Counterpart
+      <button type="button" (click)="add.emit()" class="btn-primary">
+        <app-icon name="Plus" [size]="15" /> Add staff
       </button>
     </div>
   </div>
 
-  <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
-    <table class="w-full text-left">
-      <thead class="bg-gray-50 border-b border-gray-200">
-        <tr>
-          <th class="px-4 py-4 w-12 text-center">
-            <input
-              type="checkbox"
-              [checked]="allSelected()"
-              (change)="toggleSelectAll()"
-              class="w-5 h-5 accent-blue-600 cursor-pointer rounded-md"
-            />
-          </th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider w-24">ID</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Name</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider w-36">Contact Number</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Senior</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Male</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Max Morn</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Max Eve</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Max Ngt</th>
-          <th class="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Action</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        @for (member of staff(); track member.id) {
-          <tr class="transition-all" [class]="isSelected(member.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'">
-            <td class="px-4 py-4 text-center">
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="table-head">
+          <tr>
+            <th class="w-10 px-4 py-2.5 text-center">
               <input
                 type="checkbox"
-                [checked]="isSelected(member.id)"
-                (change)="toggleSelection(member.id)"
-                class="w-5 h-5 accent-blue-600 cursor-pointer rounded-md"
+                [checked]="allSelected()"
+                (change)="toggleSelectAll()"
+                class="checkbox"
+                aria-label="Select all staff"
               />
-            </td>
-            <td class="px-4 py-4">
-              <div class="flex flex-col gap-1">
-                <app-editable-id-input [id]="member.id" (idChange)="onIdChange($event)" />
-                @if (member.isCounterPart) {
-                  <span
-                    class="bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-tight w-fit"
-                    >Counterpart</span
+            </th>
+            <th class="th w-28">ID</th>
+            <th class="th">Name</th>
+            <th class="th w-40">Contact</th>
+            <th class="th w-20 text-center">Senior</th>
+            <th class="th w-20 text-center">Male</th>
+            <th class="th w-24 text-center">Max M</th>
+            <th class="th w-24 text-center">Max E</th>
+            <th class="th w-24 text-center">Max N</th>
+            <th class="th w-16 text-center">&nbsp;</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+          @for (member of staff(); track member.id) {
+            <tr
+              class="transition-colors"
+              [class]="
+                isSelected(member.id)
+                  ? 'bg-brand-50/60 dark:bg-brand-500/10'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+              "
+            >
+              <td class="px-4 py-2.5 text-center">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(member.id)"
+                  (change)="toggleSelection(member.id)"
+                  class="checkbox"
+                  [attr.aria-label]="'Select ' + (member.name || member.id)"
+                />
+              </td>
+
+              <td class="px-4 py-2.5">
+                <div class="flex flex-col items-start gap-1">
+                  <app-editable-id-input [id]="member.id" (idChange)="onIdChange($event)" />
+                  @if (member.isCounterPart) {
+                    <span class="badge bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                      Counterpart
+                    </span>
+                  } @else if (isHa(member.name)) {
+                    <span class="badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                      HA
+                    </span>
+                  }
+                </div>
+              </td>
+
+              <td class="px-4 py-2.5">
+                <input
+                  type="text"
+                  [value]="member.name"
+                  (input)="patch(member.id, { name: $any($event.target).value })"
+                  class="input-inline font-medium"
+                  placeholder="Enter name"
+                />
+              </td>
+
+              <td class="px-4 py-2.5">
+                <input
+                  type="text"
+                  [value]="member.phone || ''"
+                  (input)="patch(member.id, { phone: $any($event.target).value })"
+                  class="input-inline font-mono text-xs"
+                  placeholder="555-0100"
+                />
+              </td>
+
+              @if (member.isCounterPart) {
+                <td colspan="5" class="px-4 py-2.5">
+                  <div
+                    class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-violet-100
+                      bg-violet-50/60 px-3 py-2 text-xs dark:border-violet-500/20 dark:bg-violet-500/5"
                   >
-                }
-                @if (isHa(member.name)) {
-                  <span
-                    class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-tight w-fit"
-                    >HA Category</span
-                  >
-                }
-              </div>
-            </td>
-            <td class="px-4 py-4">
-              <input
-                type="text"
-                [value]="member.name"
-                (input)="patch(member.id, { name: $any($event.target).value })"
-                class="w-full bg-transparent border-b border-transparent focus:border-blue-500 py-1 text-sm font-medium outline-none transition-all placeholder:text-gray-300"
-                placeholder="Enter name"
-              />
-            </td>
-            <td class="px-4 py-4">
-              <input
-                type="text"
-                [value]="member.phone || ''"
-                (input)="patch(member.id, { phone: $any($event.target).value })"
-                class="w-full bg-transparent border-b border-transparent focus:border-blue-500 py-1 text-sm font-medium outline-none transition-all placeholder:text-gray-300"
-                placeholder="e.g. 555-0100"
-              />
-            </td>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-slate-500 dark:text-slate-400">Mirrors</span>
+                      <select
+                        (change)="patch(member.id, { counterPartOf: $any($event.target).value })"
+                        class="input input-sm w-auto py-1"
+                        [attr.aria-label]="'Staff mirrored by ' + member.id"
+                      >
+                        <option value="" [selected]="!member.counterPartOf">Select…</option>
+                        @for (s of primaryStaff(); track s.id) {
+                          <option [value]="s.id" [selected]="s.id === member.counterPartOf">
+                            {{ s.name || 'Staff ' + s.id }}
+                          </option>
+                        }
+                      </select>
+                    </div>
 
-            @if (member.isCounterPart) {
-              <td colspan="5" class="px-4 py-4">
-                <div
-                  class="flex flex-wrap items-center gap-4 bg-violet-50/70 border border-violet-100 rounded-xl px-4 py-2 text-xs"
-                >
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-violet-700">Mirrors:</span>
-                    <select
-                      (change)="patch(member.id, { counterPartOf: $any($event.target).value })"
-                      class="bg-white border border-violet-200 text-violet-900 rounded px-2 py-1 font-bold outline-none focus:ring-1 focus:ring-violet-400"
-                    >
-                      <option value="" [selected]="!member.counterPartOf">Select Staff...</option>
-                      @for (s of primaryStaff(); track s.id) {
-                        <option [value]="s.id" [selected]="s.id === member.counterPartOf">
-                          {{ s.name || 'Staff ' + s.id }} ({{ s.id }})
-                        </option>
-                      }
-                    </select>
-                  </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-slate-500 dark:text-slate-400">Period</span>
+                      <select
+                        (change)="onPeriodModeChange(member, $any($event.target).value)"
+                        class="input input-sm w-auto py-1"
+                        [attr.aria-label]="'Mirror period for ' + member.id"
+                      >
+                        <option value="month" [selected]="periodMode(member) === 'month'">Entire month</option>
+                        <option value="custom" [selected]="periodMode(member) === 'custom'">Custom days</option>
+                      </select>
 
-                  <div class="flex items-center gap-2">
-                    <span class="font-bold text-violet-700">Period:</span>
-                    <select
-                      (change)="onPeriodModeChange(member, $any($event.target).value)"
-                      class="bg-white border border-violet-200 text-violet-900 rounded px-2 py-1 font-bold outline-none focus:ring-1 focus:ring-violet-400"
-                    >
-                      <option value="month" [selected]="periodMode(member) === 'month'">Entire Month</option>
-                      <option value="custom" [selected]="periodMode(member) === 'custom'">Custom Days</option>
-                    </select>
-
-                    @if (member.counterPartStart) {
-                      <div class="flex items-center gap-1.5 ml-1">
-                        <span class="text-violet-500 font-bold">From:</span>
+                      @if (member.counterPartStart) {
+                        <span class="text-slate-400 dark:text-slate-500">from</span>
                         <select
                           (change)="onCounterPartDayChange(member, 'counterPartStart', $any($event.target).value)"
-                          class="bg-white border border-violet-200 text-violet-900 rounded px-1.5 py-0.5 font-bold outline-none"
+                          class="input input-sm w-auto py-1"
+                          aria-label="First mirrored day"
                         >
                           @for (d of dayNumbers(); track d) {
                             <option [value]="d" [selected]="d === counterPartDay(member.counterPartStart, 1)">
@@ -176,11 +170,11 @@
                             </option>
                           }
                         </select>
-
-                        <span class="text-violet-500 font-bold">To:</span>
+                        <span class="text-slate-400 dark:text-slate-500">to</span>
                         <select
                           (change)="onCounterPartDayChange(member, 'counterPartEnd', $any($event.target).value)"
-                          class="bg-white border border-violet-200 text-violet-900 rounded px-1.5 py-0.5 font-bold outline-none"
+                          class="input input-sm w-auto py-1"
+                          aria-label="Last mirrored day"
                         >
                           @for (d of dayNumbers(); track d) {
                             <option
@@ -191,179 +185,142 @@
                             </option>
                           }
                         </select>
-                      </div>
-                    }
+                      }
+                    </div>
                   </div>
-                </div>
-              </td>
-            } @else {
-              <td class="px-4 py-4 text-center">
-                @if (isHa(member.name)) {
-                  <span
-                    class="text-gray-400 text-xs font-bold font-mono uppercase tracking-tight bg-gray-100 px-2 py-1 rounded"
-                    >N/A</span
-                  >
-                } @else {
+                </td>
+              } @else {
+                <td class="px-4 py-2.5 text-center">
+                  @if (isHa(member.name)) {
+                    <span class="text-xs text-slate-300 dark:text-slate-600">n/a</span>
+                  } @else {
+                    <input
+                      type="checkbox"
+                      [checked]="member.isSenior"
+                      (change)="patch(member.id, { isSenior: $any($event.target).checked })"
+                      class="checkbox"
+                      [attr.aria-label]="'Senior: ' + (member.name || member.id)"
+                    />
+                  }
+                </td>
+                <td class="px-4 py-2.5 text-center">
+                  @if (isHa(member.name)) {
+                    <span class="text-xs text-slate-300 dark:text-slate-600">n/a</span>
+                  } @else {
+                    <input
+                      type="checkbox"
+                      [checked]="member.isMale"
+                      (change)="patch(member.id, { isMale: $any($event.target).checked })"
+                      class="checkbox"
+                      [attr.aria-label]="'Male: ' + (member.name || member.id)"
+                    />
+                  }
+                </td>
+                <td class="px-3 py-2.5 text-center">
                   <input
-                    type="checkbox"
-                    [checked]="member.isSenior"
-                    (change)="patch(member.id, { isSenior: $any($event.target).checked })"
-                    class="w-5 h-5 accent-emerald-600 rounded-md cursor-pointer"
+                    type="number"
+                    [value]="member.maxMorning"
+                    (input)="patchNumber(member.id, 'maxMorning', $any($event.target).value)"
+                    class="input input-sm w-16 text-center"
+                    [attr.aria-label]="'Max mornings: ' + (member.name || member.id)"
                   />
-                }
-              </td>
-              <td class="px-4 py-4 text-center">
-                @if (isHa(member.name)) {
-                  <span
-                    class="text-gray-400 text-xs font-bold font-mono uppercase tracking-tight bg-gray-100 px-2 py-1 rounded"
-                    >N/A</span
-                  >
-                } @else {
+                </td>
+                <td class="px-3 py-2.5 text-center">
                   <input
-                    type="checkbox"
-                    [checked]="member.isMale"
-                    (change)="patch(member.id, { isMale: $any($event.target).checked })"
-                    class="w-5 h-5 accent-blue-600 rounded-md cursor-pointer"
+                    type="number"
+                    [value]="member.maxEvening"
+                    (input)="patchNumber(member.id, 'maxEvening', $any($event.target).value)"
+                    class="input input-sm w-16 text-center"
+                    [attr.aria-label]="'Max evenings: ' + (member.name || member.id)"
                   />
-                }
-              </td>
-              <td class="px-4 py-4 text-center">
-                <input
-                  type="number"
-                  [value]="member.maxMorning"
-                  (input)="patchNumber(member.id, 'maxMorning', $any($event.target).value)"
-                  class="w-16 border border-gray-200 rounded-md px-2 py-1 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                />
-              </td>
-              <td class="px-4 py-4 text-center">
-                <input
-                  type="number"
-                  [value]="member.maxEvening"
-                  (input)="patchNumber(member.id, 'maxEvening', $any($event.target).value)"
-                  class="w-16 border border-gray-200 rounded-md px-2 py-1 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                />
-              </td>
-              <td class="px-4 py-4 text-center">
-                <input
-                  type="number"
-                  [value]="member.maxNight"
-                  (input)="patchNumber(member.id, 'maxNight', $any($event.target).value)"
-                  class="w-16 border border-gray-200 rounded-md px-2 py-1 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                />
-              </td>
-            }
+                </td>
+                <td class="px-3 py-2.5 text-center">
+                  <input
+                    type="number"
+                    [value]="member.maxNight"
+                    (input)="patchNumber(member.id, 'maxNight', $any($event.target).value)"
+                    class="input input-sm w-16 text-center"
+                    [attr.aria-label]="'Max nights: ' + (member.name || member.id)"
+                  />
+                </td>
+              }
 
-            <td class="px-4 py-4 text-center">
-              <button
-                type="button"
-                (click)="delete([member.id])"
-                class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
-              >
-                <app-icon name="Trash2" [size]="18" />
-              </button>
-            </td>
-          </tr>
-        }
-        @if (staff().length === 0) {
-          <tr>
-            <td colspan="10" class="px-4 py-16 text-center text-gray-400">No staff members added.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+              <td class="px-4 py-2.5 text-center">
+                <button
+                  type="button"
+                  (click)="delete([member.id])"
+                  class="btn-icon hover:text-rose-600 dark:hover:text-rose-400"
+                  [attr.aria-label]="'Delete ' + (member.name || member.id)"
+                >
+                  <app-icon name="Trash2" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+
+          @if (staff().length === 0) {
+            <tr>
+              <td colspan="10" class="px-4 py-16 text-center">
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">No staff yet</p>
+                <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  Add members one by one, or import a CSV.
+                </p>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Staff Categories Explanation Section -->
-  <div class="mt-8 border rounded-2xl p-6 shadow-sm transition-all duration-500" [class]="panelBgClass()">
-    <div class="flex items-center gap-2 mb-4">
-      <app-icon name="Info" [size]="20" [class]="isNight() ? 'text-cyan-400' : 'text-blue-600'" />
-      <h3 class="text-lg font-bold tracking-tight" [class]="titleColor()">Staff Categories Explanation</h3>
+  <!-- Staff categories -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <app-icon name="Info" [size]="16" class="text-slate-400" />
+        Staff categories
+      </h2>
     </div>
-    <p class="text-xs sm:text-sm mb-6 font-medium leading-relaxed" [class]="descColor()">
-      This application categorizes personnel into three operational roles to automate roster balancing and comply with
-      your facility's safety regulations:
-    </p>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Regular Staff -->
-      <div class="p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all" [class]="cardBgClass()">
-        <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 rounded-lg" [class]="iconBgRegular()">
-              <app-icon name="Users" [size]="18" />
-            </div>
-            <h4 class="font-extrabold text-sm uppercase tracking-tight" [class]="titleColor()">Regular Staff</h4>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed font-medium mb-3">
-            Standard nursing and duty personnel who handle the core roster shifts.
-          </p>
-          <ul class="text-[11px] space-y-1.5 list-disc pl-4 font-medium leading-relaxed" [class]="listColor()">
-            <li>Subject to <strong>Seniority requirements</strong> (e.g. minimum senior staff per shift).</li>
-            <li>Subject to <strong>Gender balance rules</strong> (e.g. maximum male staff per shift).</li>
-            <li>Individual monthly shift limit caps are applied during roster generation.</li>
-          </ul>
+    <div class="grid grid-cols-1 gap-px bg-slate-200 dark:bg-slate-800 md:grid-cols-3">
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <div class="flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+            <app-icon name="Users" [size]="14" />
+          </span>
+          <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100">Regular</h3>
         </div>
-        <div
-          class="mt-4 pt-3 border-t border-slate-100 text-[10px] font-bold uppercase tracking-wider"
-          [class]="isNight() ? 'text-slate-500' : 'text-slate-400'"
-        >
-          Primary Role Category
-        </div>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Core duty personnel. Subject to seniority minimums, the gender balance cap, and their own monthly shift
+          limits during generation.
+        </p>
       </div>
 
-      <!-- HA Staff -->
-      <div class="p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all" [class]="cardBgClass()">
-        <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 rounded-lg font-extrabold text-xs px-2.5" [class]="iconBgHa()">HA</div>
-            <h4 class="font-extrabold text-sm uppercase tracking-tight" [class]="titleColor()">HA Staff</h4>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed font-medium mb-3">
-            Auxiliary Hospital Assistants. Names starting with
-            <code class="px-1 py-0.5 rounded font-mono text-[10px]" [class]="codeClass()">HA</code> or
-            <code class="px-1 py-0.5 rounded font-mono text-[10px]" [class]="codeClass()">(HA)</code> are automatically
-            designated.
-          </p>
-          <ul class="text-[11px] space-y-1.5 list-disc pl-4 font-medium leading-relaxed" [class]="listColor()">
-            <li><strong>Exempt</strong> from general Seniority and Gender balance controls.</li>
-            <li>
-              Governed strictly by dedicated <strong>HA-specific rules</strong> (Min HA per shift, distinct
-              off-after-night recovery).
-            </li>
-            <li>Automatically organized at the bottom of daily printed assignment views.</li>
-          </ul>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <div class="flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-emerald-50 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+            HA
+          </span>
+          <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100">Hospital assistants</h3>
         </div>
-        <div
-          class="mt-4 pt-3 border-t border-slate-100 text-[10px] font-bold uppercase tracking-wider"
-          [class]="isNight() ? 'text-emerald-500' : 'text-emerald-600'"
-        >
-          Exempt / Auxiliary
-        </div>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Names starting with
+          <code class="rounded bg-slate-100 px-1 font-mono text-[10px] dark:bg-slate-800">HA</code> or
+          <code class="rounded bg-slate-100 px-1 font-mono text-[10px] dark:bg-slate-800">(HA)</code>. Exempt from
+          seniority and gender rules; governed by the separate HA minimums.
+        </p>
       </div>
 
-      <!-- Counterpart Staff -->
-      <div class="p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all" [class]="cardBgClass()">
-        <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 rounded-lg" [class]="iconBgCp()">
-              <app-icon name="Save" [size]="18" />
-            </div>
-            <h4 class="font-extrabold text-sm uppercase tracking-tight" [class]="titleColor()">Counterpart Staff</h4>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed font-medium mb-3">
-            Relief or trainee staff linked to a primary member to duplicate schedules.
-          </p>
-          <ul class="text-[11px] space-y-1.5 list-disc pl-4 font-medium leading-relaxed" [class]="listColor()">
-            <li><strong>Automatically mirrors</strong> the exact daily duty assignments of their primary counterpart.</li>
-            <li>Can be active for the entire month or configured for a <strong>custom day range</strong>.</li>
-            <li>Saves scheduling time and guarantees locked-step pairings.</li>
-          </ul>
+      <div class="bg-white p-4 dark:bg-slate-900">
+        <div class="flex items-center gap-2">
+          <span class="flex h-6 w-6 items-center justify-center rounded bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400">
+            <app-icon name="Save" [size]="14" />
+          </span>
+          <h3 class="text-sm font-medium text-slate-900 dark:text-slate-100">Counterpart</h3>
         </div>
-        <div
-          class="mt-4 pt-3 border-t border-slate-100 text-[10px] font-bold uppercase tracking-wider"
-          [class]="isNight() ? 'text-violet-500' : 'text-violet-600'"
-        >
-          Linked / Shadow
-        </div>
+        <p class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          Mirrors another member's duties exactly, for the whole month or a custom range. Their grid cells are
+          read-only and they are excluded from headcount requirements.
+        </p>
       </div>
     </div>
   </div>

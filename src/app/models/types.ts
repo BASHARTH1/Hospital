@@ -73,7 +73,7 @@ export interface Assignment {
 }
 
 export type TabType = 'Staff' | 'Rules' | 'Manual' | 'Generate' | 'Calendar';
-export type ThemeType = 'Professional' | 'Colorful' | 'Attractive' | 'Day' | 'Night';
+export type ThemeType = 'Light' | 'Dark';
 
 /** Names starting with `HA` or `(HA)` are auxiliary Hospital Assistants. */
 export function isHaStaff(name: string): boolean {

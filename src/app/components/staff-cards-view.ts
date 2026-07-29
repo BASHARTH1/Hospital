@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, input, output, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, OnInit, computed, effect, input, output, signal } from '@angular/core';
 import { MONTHS } from '../constants';
-import { Assignment, RosterConfig, StaffMember, ThemeType, pad2 } from '../models/types';
+import { Assignment, RosterConfig, StaffMember, pad2 } from '../models/types';
 import { useDynamicStyle } from '../ui/dynamic-style';
 import { Icon } from '../ui/icon';
 import { CardColorMode, GridCellTemplate, StaffCard } from './staff-card';
@@ -17,7 +17,6 @@ export class StaffCardsView implements OnInit {
   readonly staff = input.required<StaffMember[]>();
   readonly config = input.required<RosterConfig>();
   readonly assignments = input.required<Assignment[]>();
-  readonly appTheme = input<ThemeType>('Professional');
 
   readonly back = output<void>();
 
@@ -199,3 +198,4 @@ export class StaffCardsView implements OnInit {
     `;
   });
 }
+

@@ -1,257 +1,165 @@
-<div class="space-y-6">
-  <!-- Header & main controls -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print pb-4 border-b border-gray-200/50">
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="no-print flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <button
-        type="button"
-        (click)="back.emit()"
-        class="flex items-center gap-1.5 text-xs font-black text-gray-500 hover:text-gray-800 transition uppercase mb-1"
-      >
-        <app-icon name="ChevronLeft" [size]="14" />
-        Back to Table Grid
+      <button type="button" (click)="back.emit()" class="btn-ghost btn-sm -ml-2 mb-1">
+        <app-icon name="ChevronLeft" [size]="14" /> Back to grid
       </button>
-      <h2 class="text-xl font-black flex items-center gap-2 text-gray-800">
-        <span class="p-1 bg-rose-500 text-white rounded-lg flex items-center justify-center">
-          <app-icon name="CalendarIcon" [size]="16" />
-        </span>
-        Daily Assignment Sheet (Print Layout)
-      </h2>
-      <p class="text-xs text-gray-500 font-medium">
-        Generate and print daily duty logs matching physical roster charts with sign-off cells
+      <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Daily assignment sheet</h1>
+      <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        One sheet per day, matching the physical roster chart, with space for sign-off.
       </p>
     </div>
-    <div class="flex gap-2 w-full sm:w-auto">
-      <button
-        type="button"
-        (click)="print()"
-        [disabled]="selectedDays().length === 0"
-        class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-black text-xs shadow-md uppercase tracking-wider"
-        [class.opacity-50]="selectedDays().length === 0"
-        [class.cursor-not-allowed]="selectedDays().length === 0"
-      >
-        <app-icon name="Printer" [size]="14" />
-        Print sheets ({{ selectedDays().length }} days)
-      </button>
-    </div>
+    <button type="button" (click)="print()" [disabled]="selectedDays().length === 0" class="btn-primary">
+      <app-icon name="Printer" [size]="15" /> Print {{ selectedDays().length }} sheet{{ selectedDays().length === 1 ? '' : 's' }}
+    </button>
   </div>
 
-  <!-- Settings grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 no-print">
-    <div class="space-y-6">
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-600">
-          <app-icon name="Settings" [size]="14" />
-          Print Options
-        </h3>
-
-        <div class="space-y-3">
+  <div class="no-print grid grid-cols-1 gap-4 lg:grid-cols-4">
+    <!-- Controls -->
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Print options</h2></div>
+        <div class="card-body space-y-3">
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Days per Page</label>
-            <select
-              [value]="daysPerPage()"
-              (change)="daysPerPage.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="1">1 Day per Page (Landscape)</option>
-              <option value="2">2 Days per Page (Landscape - Best Fit)</option>
-              <option value="continuous">Continuous (Scroll / Grid)</option>
+            <label for="days-per-page" class="label">Days per page</label>
+            <select id="days-per-page" (change)="daysPerPage.set($any($event.target).value)" class="input input-sm">
+              <option value="1" [selected]="daysPerPage() === '1'">1 per page (landscape)</option>
+              <option value="2" [selected]="daysPerPage() === '2'">2 per page (landscape)</option>
+              <option value="continuous" [selected]="daysPerPage() === 'continuous'">Continuous</option>
             </select>
           </div>
-
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Min Rows for Personnel</label>
-            <input
-              type="number"
-              min="4"
-              max="15"
-              [value]="numRows()"
-              (input)="setNumRows($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            <span class="text-[9px] text-gray-400 mt-0.5 block">Sets uniform height for lists</span>
+            <label for="min-rows" class="label">Minimum personnel rows</label>
+            <input id="min-rows" type="number" min="4" max="15" [value]="numRows()"
+              (input)="setNumRows($any($event.target).value)" class="input input-sm" />
+            <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">Keeps every sheet the same height.</p>
           </div>
-
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Color Theme</label>
-            <select
-              [value]="printTheme()"
-              (change)="printTheme.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="slate">Classic Slate (Standard)</option>
-              <option value="teal">Medical Teal</option>
-              <option value="indigo">Navy Professional</option>
-              <option value="amber">Warm Amber</option>
-              <option value="emerald">Emerald Healing</option>
+            <label for="daily-theme" class="label">Sheet colour</label>
+            <select id="daily-theme" (change)="printTheme.set($any($event.target).value)" class="input input-sm">
+              <option value="slate" [selected]="printTheme() === 'slate'">Classic slate</option>
+              <option value="teal" [selected]="printTheme() === 'teal'">Medical teal</option>
+              <option value="indigo" [selected]="printTheme() === 'indigo'">Navy</option>
+              <option value="amber" [selected]="printTheme() === 'amber'">Amber</option>
+              <option value="emerald" [selected]="printTheme() === 'emerald'">Emerald</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- Category font colors -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
-          <span class="flex items-center gap-1.5 text-rose-600">
-            <app-icon name="Palette" [size]="14" />
-            Font Colors
-          </span>
-          <button
-            type="button"
-            (click)="resetColors()"
-            class="text-[9px] font-black text-rose-600 hover:text-rose-700 hover:underline uppercase tracking-tight"
-            title="Reset all categories to default color"
-          >
-            Default
-          </button>
-        </h3>
-
-        <div class="grid grid-cols-2 gap-3">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Text colours</h2>
+          <button type="button" (click)="resetColors()" class="btn-ghost btn-sm -mr-1">Reset</button>
+        </div>
+        <div class="card-body grid grid-cols-2 gap-3">
           @for (cat of colorCategories; track cat.key) {
-            <div class="space-y-1">
-              <label class="text-[9px] font-black text-gray-400 uppercase">{{ cat.label }}</label>
-              <div class="flex items-center gap-1.5">
+            <div>
+              <label [attr.for]="'colour-' + cat.key" class="label mb-1">{{ cat.label }}</label>
+              <div class="flex items-center gap-2">
                 <input
+                  [id]="'colour-' + cat.key"
                   type="color"
                   [value]="categoryColors()[cat.key]"
                   (input)="handleColorChange(cat.key, $any($event.target).value)"
-                  class="w-6 h-6 rounded cursor-pointer border border-gray-200"
+                  class="h-6 w-8 cursor-pointer rounded border border-slate-200 bg-transparent dark:border-slate-700"
                 />
-                <span class="text-[9px] font-mono font-bold text-gray-500 uppercase">{{
-                  categoryColors()[cat.key]
-                }}</span>
+                <span class="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500">
+                  {{ categoryColors()[cat.key] }}
+                </span>
               </div>
             </div>
           }
         </div>
       </div>
 
-      <!-- Date selectors -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
-          <span class="flex items-center gap-1.5 text-emerald-600">
-            <app-icon name="CalendarIcon" [size]="14" />
-            Days to Print
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Days</h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">
+            {{ selectedDays().length }} / {{ daysInMonth() }}
           </span>
-          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black">
-            {{ selectedDays().length }} / {{ daysInMonth() }} Selected
-          </span>
-        </h3>
-
-        <div class="grid grid-cols-2 gap-1.5">
-          <button
-            type="button"
-            (click)="selectAll()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            (click)="selectNone()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
-          >
-            None
-          </button>
-          <button
-            type="button"
-            (click)="selectWeekdays()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-indigo-600"
-          >
-            Weekdays
-          </button>
-          <button
-            type="button"
-            (click)="selectWeekends()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-amber-600"
-          >
-            Weekends
-          </button>
         </div>
-
-        <div class="grid grid-cols-5 gap-1.5 max-h-[160px] overflow-y-auto pr-1">
-          @for (d of dayCells(); track d.dayNum) {
-            <button
-              type="button"
-              (click)="toggleDaySelection(d.dayNum)"
-              class="p-1.5 rounded-lg text-center font-bold text-xs border transition"
-              [class]="
-                isDaySelected(d.dayNum)
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold'
-                  : d.isWeekend
-                    ? 'bg-amber-50/50 border-amber-100 text-amber-700'
-                    : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'
-              "
-            >
-              {{ d.dayNum }}
-            </button>
-          }
+        <div class="card-body space-y-3">
+          <div class="grid grid-cols-4 gap-1">
+            <button type="button" (click)="selectAll()" class="btn-secondary btn-sm px-1">All</button>
+            <button type="button" (click)="selectNone()" class="btn-secondary btn-sm px-1">None</button>
+            <button type="button" (click)="selectWeekdays()" class="btn-secondary btn-sm px-1">Wkdy</button>
+            <button type="button" (click)="selectWeekends()" class="btn-secondary btn-sm px-1">Wknd</button>
+          </div>
+          <div class="grid grid-cols-7 gap-1">
+            @for (d of dayCells(); track d.dayNum) {
+              <button
+                type="button"
+                (click)="toggleDaySelection(d.dayNum)"
+                class="h-7 rounded border text-[11px] font-medium transition-colors"
+                [class]="
+                  isDaySelected(d.dayNum)
+                    ? 'border-brand-500 bg-brand-600 text-white'
+                    : d.isWeekend
+                      ? 'border-slate-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-slate-700 dark:bg-amber-500/10 dark:text-amber-400'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                "
+                [attr.aria-pressed]="isDaySelected(d.dayNum)"
+              >
+                {{ d.dayNum }}
+              </button>
+            }
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Live preview -->
-    <div class="lg:col-span-3 space-y-6">
+    <!-- Preview -->
+    <div class="space-y-4 lg:col-span-3">
       @if (selectedDays().length === 0) {
-        <div class="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-gray-200 text-center space-y-4">
-          <div class="p-3 bg-rose-50 text-rose-500 rounded-full animate-bounce">
-            <app-icon name="CalendarIcon" [size]="32" />
-          </div>
+        <div class="card flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <app-icon name="CalendarIcon" [size]="28" class="text-slate-300 dark:text-slate-600" />
           <div>
-            <h4 class="font-black text-gray-800 text-sm">No Days Selected</h4>
-            <p class="text-xs text-gray-400 max-w-sm">
-              Please select at least one day from the left sidebar to render the daily assignment preview.
-            </p>
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-200">No days selected</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pick at least one day to preview a sheet.</p>
           </div>
-          <button
-            type="button"
-            (click)="selectAll()"
-            class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-black text-xs uppercase"
-          >
-            Select All Days
-          </button>
+          <button type="button" (click)="selectAll()" class="btn-secondary btn-sm">Select all days</button>
         </div>
       } @else {
-        <div class="space-y-6">
-          <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-xs font-medium">
-            <strong>💡 Tip:</strong> You can type any workshop topic, schedule, or daily agenda notes directly into the
-            <strong>Agenda &amp; Notes</strong> free-text box below. Your input is saved automatically and prints
-            perfectly!
+        <p class="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          Type workshop topics, times or agenda notes straight into the
+          <span class="font-medium text-slate-700 dark:text-slate-200">Agenda &amp; notes</span> box on any sheet —
+          entries are saved automatically and included in the printout.
+        </p>
+
+        @for (dayNum of selectedDays(); track dayNum) {
+          <div class="card print-day-block relative p-3">
+            <button
+              type="button"
+              (click)="toggleDaySelection(dayNum)"
+              class="btn-icon no-print absolute right-2 top-2 z-10 hover:text-rose-600"
+              [attr.aria-label]="'Remove day ' + dayNum + ' from the printout'"
+            >
+              <app-icon name="Trash2" [size]="13" />
+            </button>
+
+            <app-day-assignment-card
+              [staff]="staff()"
+              [assignments]="assignments()"
+              [config]="config()"
+              [dayNum]="dayNum"
+              [monthIdx]="monthIdx()"
+              [shortMonthName]="shortMonthName()"
+              [numRows]="numRows()"
+              [themeStyles]="themeStyles()"
+              [notes]="notesFor(dayNum)"
+              (notesChange)="onNotesChange(dayNum, $event)"
+            />
           </div>
-
-          @for (dayNum of selectedDays(); track dayNum) {
-            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm relative print-day-block">
-              <div class="absolute top-2 right-2 no-print z-10">
-                <button
-                  type="button"
-                  (click)="toggleDaySelection(dayNum)"
-                  class="p-1 bg-gray-100 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition"
-                  title="Remove from printout"
-                >
-                  <app-icon name="Trash2" [size]="12" />
-                </button>
-              </div>
-
-              <app-day-assignment-card
-                [staff]="staff()"
-                [assignments]="assignments()"
-                [config]="config()"
-                [dayNum]="dayNum"
-                [monthIdx]="monthIdx()"
-                [shortMonthName]="shortMonthName()"
-                [numRows]="numRows()"
-                [themeStyles]="themeStyles()"
-                [notes]="notesFor(dayNum)"
-                (notesChange)="onNotesChange(dayNum, $event)"
-              />
-            </div>
-          }
-        </div>
+        }
       }
     </div>
   </div>
 
-  <!-- Printable area -->
-  <div class="hidden print:block print-days-container">
+  <!-- Print-only output -->
+  <div class="hidden print-days-container print:block">
     @for (dayNum of selectedDays(); track dayNum) {
       <div class="print-day-block">
         <app-day-assignment-card

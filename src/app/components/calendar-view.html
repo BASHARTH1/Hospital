@@ -4,7 +4,6 @@
       [staff]="staff()"
       [config]="config()"
       [assignments]="assignments()"
-      [appTheme]="theme()"
       (back)="setViewMode('table')"
     />
   }
@@ -25,98 +24,71 @@
     />
   }
   @default {
-    <div class="space-y-6" id="print-root">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-          <div>
-            <h2 class="text-xl font-semibold flex items-center gap-2 text-gray-800">
-              <app-icon name="CalendarIcon" [size]="20" class="text-gray-400" />
-              {{ config().wardName ? config().wardName + ' - ' : '' }}{{ config().month }} {{ config().year }}
-            </h2>
-            <p class="text-sm text-gray-500">Final duty rota for all staff</p>
-          </div>
+    <div class="space-y-4" id="print-root">
+      <div class="no-print flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            Duty roster — {{ config().month }} {{ config().year }}
+          </h1>
+          <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+            Final rota for all staff. Switch views to print duty cards, daily sheets, or the on-call list.
+          </p>
+        </div>
 
-          <!-- Quick ward name selector -->
-          <div class="flex flex-col min-w-[180px] max-w-xs self-start">
-            <label class="text-[10px] font-black text-gray-400 uppercase block mb-1">Ward Name</label>
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="w-44">
+            <label for="ward-name" class="label">Ward</label>
             <input
+              id="ward-name"
               type="text"
               [value]="config().wardName || ''"
               (input)="onWardNameChange($any($event.target).value)"
-              placeholder="Change Ward Name..."
-              class="w-full px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
+              placeholder="e.g. ICU"
+              class="input input-sm"
             />
           </div>
 
-          <!-- Roster view mode toggle -->
-          <div class="flex p-0.5 bg-gray-100 rounded-xl border border-gray-200 shadow-sm ml-0 sm:ml-4 self-start">
-            <button
-              type="button"
-              (click)="setViewMode('table')"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
-              [class]="viewMode() === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            >
-              <app-icon name="CalendarIcon" [size]="14" />
-              Table Grid
+          <div class="flex gap-2">
+            <button type="button" (click)="exportCsv.emit()" class="btn-secondary">
+              <app-icon name="Download" [size]="15" /> Export CSV
             </button>
-            <button
-              type="button"
-              (click)="setViewMode('cards')"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
-              [class]="viewMode() === 'cards' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            >
-              <app-icon name="Plus" [size]="14" class="rotate-45" />
-              Staff Duty Cards
-            </button>
-            <button
-              type="button"
-              (click)="setViewMode('daily')"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
-              [class]="viewMode() === 'daily' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            >
-              <app-icon name="Save" [size]="14" />
-              Daily Sheet
-            </button>
-            <button
-              type="button"
-              (click)="setViewMode('oncall')"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all"
-              [class]="viewMode() === 'oncall' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-            >
-              <app-icon name="Users" [size]="14" />
-              On-Call List
+            <button type="button" (click)="print()" class="btn-primary">
+              <app-icon name="Printer" [size]="15" /> Print
             </button>
           </div>
         </div>
-
-        <div class="flex gap-2 w-full sm:w-auto self-end">
-          <button
-            type="button"
-            (click)="exportCsv.emit()"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-bold text-sm shadow-sm"
-          >
-            <app-icon name="Download" [size]="18" />
-            Export CSV
-          </button>
-          <button
-            type="button"
-            (click)="print()"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition font-bold text-sm shadow-md"
-          >
-            <app-icon name="Printer" [size]="18" />
-            Print / PDF
-          </button>
-        </div>
       </div>
 
-      <div class="hidden print:block mb-4 text-center">
-        @if (config().wardName) {
-          <h2 class="text-lg font-black uppercase tracking-widest text-gray-700 mb-0.5">{{ config().wardName }}</h2>
+      <!-- View switcher -->
+      <div
+        class="no-print inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-card
+          dark:border-slate-800 dark:bg-slate-900"
+      >
+        @for (view of views; track view.id) {
+          <button
+            type="button"
+            (click)="setViewMode(view.id)"
+            class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+            [class]="
+              viewMode() === view.id
+                ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+            "
+          >
+            <app-icon [name]="view.icon" [size]="14" />
+            {{ view.label }}
+          </button>
         }
-        <h1 class="text-2xl font-black uppercase tracking-widest">
-          {{ config().month }} {{ config().year }} DUTY ROSTER
+      </div>
+
+      <!-- Print-only masthead -->
+      <div class="hidden text-center print:block">
+        @if (config().wardName) {
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-600">{{ config().wardName }}</h2>
+        }
+        <h1 class="text-lg font-bold uppercase tracking-widest">
+          {{ config().month }} {{ config().year }} duty roster
         </h1>
-        <p class="text-[10px] text-gray-500 font-bold uppercase mt-1">Generated by AI Staff Manager</p>
       </div>
 
       <app-shift-grid
@@ -125,18 +97,15 @@
         [assignments]="assignments()"
         [readOnly]="true"
         [hideContextDays]="true"
-        [theme]="theme()"
       />
 
-      <div class="hidden print:block mt-8 border-t border-slate-300 pt-4">
-        <div class="flex justify-between items-end">
-          <div class="space-y-4">
-            <div class="w-48 h-px bg-slate-400 mb-1"></div>
-            <p class="text-[10px] font-bold uppercase text-slate-500">Department Head Signature</p>
+      <div class="mt-8 hidden border-t border-slate-300 pt-4 print:block">
+        <div class="flex items-end justify-between">
+          <div>
+            <div class="mb-1 h-px w-48 bg-slate-400"></div>
+            <p class="text-[10px] font-medium uppercase text-slate-500">Department head signature</p>
           </div>
-          <div class="text-right">
-            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Printed on {{ printedOn }}</p>
-          </div>
+          <p class="text-[8px] font-medium uppercase tracking-widest text-slate-400">Printed {{ printedOn }}</p>
         </div>
       </div>
     </div>

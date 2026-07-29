@@ -163,38 +163,30 @@ export class RulesManager {
     };
   });
 
-  readonly insightCardClass = computed(() => {
+  readonly insightBannerClass = computed(() => {
     switch (this.smartAnalysis().status) {
       case 'critical':
-        return 'bg-red-50 border-red-200';
+        return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300';
       case 'warning':
-        return 'bg-amber-50 border-amber-200';
+        return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300';
       default:
-        return 'bg-emerald-50 border-emerald-200';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300';
     }
   });
 
-  readonly insightIconClass = computed(() => {
-    switch (this.smartAnalysis().status) {
-      case 'critical':
-        return 'bg-red-100 text-red-600';
-      case 'warning':
-        return 'bg-amber-100 text-amber-600';
-      default:
-        return 'bg-emerald-100 text-emerald-600';
-    }
-  });
+  readonly insightIcon = computed(() => (this.smartAnalysis().status === 'healthy' ? 'CheckCircle2' : 'Info'));
 
-  readonly insightDotClass = computed(() => {
-    switch (this.smartAnalysis().status) {
-      case 'critical':
-        return 'bg-red-500';
-      case 'warning':
-        return 'bg-amber-500';
-      default:
-        return 'bg-emerald-500';
-    }
-  });
+  readonly deficitClass = computed(() =>
+    this.smartAnalysis().deficit > 0
+      ? 'text-rose-600 dark:text-rose-400'
+      : 'text-emerald-600 dark:text-emerald-400',
+  );
+
+  readonly leaveClass = computed(() =>
+    this.smartAnalysis().maxLeaveAllowed > 0
+      ? 'text-slate-900 dark:text-slate-100'
+      : 'text-rose-600 dark:text-rose-400',
+  );
 
   readonly insightMessage = computed(() => {
     const a = this.smartAnalysis();

@@ -18,155 +18,120 @@ export const MONTHS = [
 export const YEARS = [2024, 2025, 2026, 2027];
 
 export interface ShiftStyle {
+  /** Short name shown in the legend. */
   label: string;
-  color: string;
+  /** Longer description shown on hover. */
+  description: string;
+  /** Background + border utilities, including their dark-mode variants. */
   bg: string;
+  /** Foreground utilities, including their dark-mode variants. */
+  color: string;
 }
 
-export const THEME_SHIFT_STYLES: Record<ThemeType, Record<ShiftType, ShiftStyle>> = {
-  Professional: {
-    [ShiftType.Morning]: { label: 'Morning', color: 'text-white', bg: 'bg-slate-700' },
-    [ShiftType.Evening]: { label: 'Evening', color: 'text-white', bg: 'bg-blue-600' },
-    [ShiftType.Night]: { label: 'Night', color: 'text-white', bg: 'bg-slate-900' },
-    [ShiftType.Off]: { label: 'Off', color: 'text-slate-600', bg: 'bg-slate-100 border border-slate-200' },
-    [ShiftType.Leave]: { label: 'Leave', color: 'text-white', bg: 'bg-red-500' },
-    [ShiftType.PublicHoliday]: {
-      label: 'Holiday',
-      color: 'text-rose-600 font-extrabold',
-      bg: 'bg-rose-50 border border-rose-200',
-    },
-    [ShiftType.MorningSpecial]: { label: 'M-Special', color: 'text-white', bg: 'bg-slate-500' },
-    [ShiftType.MorningOnCall]: { label: 'M-OnCall', color: 'text-white', bg: 'bg-slate-400' },
-    [ShiftType.EveningOnCall]: { label: 'E-OnCall', color: 'text-white', bg: 'bg-blue-400' },
-    [ShiftType.NightOnCall]: { label: 'N-OnCall', color: 'text-white', bg: 'bg-slate-800' },
-    [ShiftType.RequestedMorning]: { label: 'Req M', color: 'text-white', bg: 'bg-slate-700 ring-2 ring-red-400' },
-    [ShiftType.RequestedEvening]: { label: 'Req E', color: 'text-white', bg: 'bg-blue-700 ring-2 ring-red-400' },
-    [ShiftType.RequestedNight]: { label: 'Req N', color: 'text-white', bg: 'bg-black ring-2 ring-red-400' },
-    [ShiftType.RequestedOff]: { label: 'Req Off', color: 'text-white', bg: 'bg-slate-400 ring-2 ring-red-400' },
-    [ShiftType.None]: { label: 'None', color: 'text-slate-300', bg: 'bg-white' },
+/**
+ * One palette for every shift code, with dark-mode variants baked in.
+ *
+ * The grid is dense — 31+ columns of 10px type — so shifts read as tinted chips with
+ * dark text rather than saturated blocks: easier to scan, and it prints legibly.
+ * Hue carries the meaning: sky = morning, violet = evening, slate = night,
+ * rose = leave, amber = holiday. On-call codes are outlined rather than filled.
+ */
+export const SHIFT_STYLES: Record<ShiftType, ShiftStyle> = {
+  [ShiftType.Morning]: {
+    label: 'Morning',
+    description: 'Morning shift',
+    bg: 'bg-sky-100 dark:bg-sky-500/20',
+    color: 'text-sky-900 dark:text-sky-200',
   },
-  Colorful: {
-    [ShiftType.Morning]: { label: 'Morning', color: 'text-white', bg: 'bg-emerald-500' },
-    [ShiftType.Evening]: { label: 'Evening', color: 'text-white', bg: 'bg-fuchsia-500' },
-    [ShiftType.Night]: { label: 'Night', color: 'text-white', bg: 'bg-orange-600' },
-    [ShiftType.Off]: { label: 'Off', color: 'text-emerald-700', bg: 'bg-emerald-50 border border-emerald-100' },
-    [ShiftType.Leave]: { label: 'Leave', color: 'text-white', bg: 'bg-rose-500' },
-    [ShiftType.PublicHoliday]: { label: 'Holiday', color: 'text-white', bg: 'bg-rose-600' },
-    [ShiftType.MorningSpecial]: { label: 'M-Special', color: 'text-white', bg: 'bg-teal-400' },
-    [ShiftType.MorningOnCall]: { label: 'M-OnCall', color: 'text-white', bg: 'bg-lime-500' },
-    [ShiftType.EveningOnCall]: { label: 'E-OnCall', color: 'text-white', bg: 'bg-pink-400' },
-    [ShiftType.NightOnCall]: { label: 'N-OnCall', color: 'text-white', bg: 'bg-amber-700' },
-    [ShiftType.RequestedMorning]: { label: 'Req M', color: 'text-white', bg: 'bg-emerald-700' },
-    [ShiftType.RequestedEvening]: { label: 'Req E', color: 'text-white', bg: 'bg-fuchsia-700' },
-    [ShiftType.RequestedNight]: { label: 'Req N', color: 'text-white', bg: 'bg-orange-800' },
-    [ShiftType.RequestedOff]: { label: 'Req Off', color: 'text-white', bg: 'bg-amber-400' },
-    [ShiftType.None]: { label: 'None', color: 'text-gray-300', bg: 'bg-white' },
+  [ShiftType.Evening]: {
+    label: 'Evening',
+    description: 'Evening shift',
+    bg: 'bg-violet-100 dark:bg-violet-500/20',
+    color: 'text-violet-900 dark:text-violet-200',
   },
-  Attractive: {
-    [ShiftType.Morning]: {
-      label: 'Morning',
-      color: 'text-white',
-      bg: 'bg-gradient-to-br from-cyan-400 to-blue-500',
-    },
-    [ShiftType.Evening]: {
-      label: 'Evening',
-      color: 'text-white',
-      bg: 'bg-gradient-to-br from-purple-500 to-indigo-600',
-    },
-    [ShiftType.Night]: { label: 'Night', color: 'text-white', bg: 'bg-gradient-to-br from-slate-800 to-black' },
-    [ShiftType.Off]: { label: 'Off', color: 'text-blue-900', bg: 'bg-blue-50/50 backdrop-blur-sm' },
-    [ShiftType.Leave]: { label: 'Leave', color: 'text-white', bg: 'bg-gradient-to-br from-rose-400 to-red-600' },
-    [ShiftType.PublicHoliday]: {
-      label: 'Holiday',
-      color: 'text-white',
-      bg: 'bg-gradient-to-br from-rose-500 to-pink-600',
-    },
-    [ShiftType.MorningSpecial]: { label: 'M-Special', color: 'text-white', bg: 'bg-cyan-300' },
-    [ShiftType.MorningOnCall]: { label: 'M-OnCall', color: 'text-white', bg: 'bg-sky-300' },
-    [ShiftType.EveningOnCall]: { label: 'E-OnCall', color: 'text-white', bg: 'bg-violet-300' },
-    [ShiftType.NightOnCall]: { label: 'N-OnCall', color: 'text-white', bg: 'bg-slate-700' },
-    [ShiftType.RequestedMorning]: { label: 'Req M', color: 'text-white', bg: 'bg-cyan-600 ring-2 ring-pink-500' },
-    [ShiftType.RequestedEvening]: { label: 'Req E', color: 'text-white', bg: 'bg-purple-600 ring-2 ring-pink-500' },
-    [ShiftType.RequestedNight]: { label: 'Req N', color: 'text-white', bg: 'bg-slate-900 ring-2 ring-pink-500' },
-    [ShiftType.RequestedOff]: { label: 'Req Off', color: 'text-white', bg: 'bg-slate-500 ring-2 ring-pink-500' },
-    [ShiftType.None]: { label: 'None', color: 'text-gray-200', bg: 'bg-transparent' },
+  [ShiftType.Night]: {
+    label: 'Night',
+    description: 'Night shift',
+    bg: 'bg-slate-700 dark:bg-slate-600',
+    color: 'text-white dark:text-slate-50',
   },
-  Day: {
-    [ShiftType.Morning]: { label: 'Morning', color: 'text-amber-900', bg: 'bg-amber-400' },
-    [ShiftType.Evening]: { label: 'Evening', color: 'text-orange-900', bg: 'bg-orange-300' },
-    [ShiftType.Night]: { label: 'Night', color: 'text-white', bg: 'bg-sky-900' },
-    [ShiftType.Off]: { label: 'Off', color: 'text-amber-600', bg: 'bg-yellow-50' },
-    [ShiftType.Leave]: { label: 'Leave', color: 'text-white', bg: 'bg-red-400' },
-    [ShiftType.PublicHoliday]: {
-      label: 'Holiday',
-      color: 'text-rose-900',
-      bg: 'bg-rose-200 border border-rose-300',
-    },
-    [ShiftType.MorningSpecial]: { label: 'M-Special', color: 'text-amber-900', bg: 'bg-yellow-400' },
-    [ShiftType.MorningOnCall]: { label: 'M-OnCall', color: 'text-amber-900', bg: 'bg-yellow-200' },
-    [ShiftType.EveningOnCall]: { label: 'E-OnCall', color: 'text-orange-900', bg: 'bg-orange-100' },
-    [ShiftType.NightOnCall]: { label: 'N-OnCall', color: 'text-white', bg: 'bg-sky-800' },
-    [ShiftType.RequestedMorning]: {
-      label: 'Req M',
-      color: 'text-amber-900',
-      bg: 'bg-amber-500 border-2 border-orange-500',
-    },
-    [ShiftType.RequestedEvening]: {
-      label: 'Req E',
-      color: 'text-orange-900',
-      bg: 'bg-orange-400 border-2 border-red-500',
-    },
-    [ShiftType.RequestedNight]: { label: 'Req N', color: 'text-white', bg: 'bg-blue-900 border-2 border-red-500' },
-    [ShiftType.RequestedOff]: {
-      label: 'Req Off',
-      color: 'text-amber-700',
-      bg: 'bg-yellow-100 border-2 border-red-500',
-    },
-    [ShiftType.None]: { label: 'None', color: 'text-gray-200', bg: 'bg-white' },
+  [ShiftType.Off]: {
+    label: 'Off',
+    description: 'Rest day',
+    bg: 'bg-white dark:bg-slate-900',
+    color: 'text-slate-300 dark:text-slate-600',
   },
-  Night: {
-    [ShiftType.Morning]: { label: 'Morning', color: 'text-cyan-400', bg: 'bg-slate-800 border border-cyan-500/30' },
-    [ShiftType.Evening]: {
-      label: 'Evening',
-      color: 'text-purple-400',
-      bg: 'bg-slate-800 border border-purple-500/30',
-    },
-    [ShiftType.Night]: { label: 'Night', color: 'text-white', bg: 'bg-indigo-600' },
-    [ShiftType.Off]: { label: 'Off', color: 'text-slate-500', bg: 'bg-slate-900' },
-    [ShiftType.Leave]: { label: 'Leave', color: 'text-rose-400', bg: 'bg-slate-800 border border-rose-500/30' },
-    [ShiftType.PublicHoliday]: {
-      label: 'Holiday',
-      color: 'text-rose-400',
-      bg: 'bg-slate-800 border border-rose-500/30',
-    },
-    [ShiftType.MorningSpecial]: {
-      label: 'M-Special',
-      color: 'text-cyan-300',
-      bg: 'bg-slate-800 border border-cyan-400',
-    },
-    [ShiftType.MorningOnCall]: { label: 'M-OnCall', color: 'text-cyan-200', bg: 'bg-slate-700' },
-    [ShiftType.EveningOnCall]: { label: 'E-OnCall', color: 'text-purple-200', bg: 'bg-slate-700' },
-    [ShiftType.NightOnCall]: { label: 'N-OnCall', color: 'text-white', bg: 'bg-indigo-500' },
-    [ShiftType.RequestedMorning]: {
-      label: 'Req M',
-      color: 'text-cyan-400',
-      bg: 'bg-slate-800 ring-1 ring-cyan-400',
-    },
-    [ShiftType.RequestedEvening]: {
-      label: 'Req E',
-      color: 'text-purple-400',
-      bg: 'bg-slate-800 ring-1 ring-purple-400',
-    },
-    [ShiftType.RequestedNight]: { label: 'Req N', color: 'text-white', bg: 'bg-indigo-700 ring-1 ring-white' },
-    [ShiftType.RequestedOff]: { label: 'Req Off', color: 'text-slate-400', bg: 'bg-slate-800 ring-1 ring-slate-400' },
-    [ShiftType.None]: { label: 'None', color: 'text-slate-700', bg: 'bg-black' },
+  [ShiftType.Leave]: {
+    label: 'Leave',
+    description: 'Annual leave',
+    bg: 'bg-rose-100 dark:bg-rose-500/20',
+    color: 'text-rose-700 dark:text-rose-300',
+  },
+  [ShiftType.PublicHoliday]: {
+    label: 'Holiday',
+    description: 'Public holiday',
+    bg: 'bg-amber-100 dark:bg-amber-500/20',
+    color: 'text-amber-800 dark:text-amber-300',
+  },
+  [ShiftType.MorningSpecial]: {
+    label: 'M-Special',
+    description: 'Morning — workshop / special assignment',
+    bg: 'bg-sky-200 dark:bg-sky-500/35',
+    color: 'text-sky-950 dark:text-sky-100',
+  },
+  [ShiftType.MorningOnCall]: {
+    label: 'M-OnCall',
+    description: 'Morning on-call',
+    bg: 'bg-sky-50 ring-1 ring-inset ring-sky-400 dark:bg-sky-500/10 dark:ring-sky-500/60',
+    color: 'text-sky-700 dark:text-sky-300',
+  },
+  [ShiftType.EveningOnCall]: {
+    label: 'E-OnCall',
+    description: 'Evening on-call',
+    bg: 'bg-violet-50 ring-1 ring-inset ring-violet-400 dark:bg-violet-500/10 dark:ring-violet-500/60',
+    color: 'text-violet-700 dark:text-violet-300',
+  },
+  [ShiftType.NightOnCall]: {
+    label: 'N-OnCall',
+    description: 'Night on-call',
+    bg: 'bg-slate-100 ring-1 ring-inset ring-slate-500 dark:bg-slate-700/40 dark:ring-slate-500',
+    color: 'text-slate-700 dark:text-slate-200',
+  },
+  // Requested codes reuse their base colour. The red "requested" ring is added by the
+  // template so exactly one ring utility ever lands on the element.
+  [ShiftType.RequestedMorning]: {
+    label: 'Req M',
+    description: 'Requested morning — fixed',
+    bg: 'bg-sky-100 dark:bg-sky-500/20',
+    color: 'text-sky-900 dark:text-sky-200',
+  },
+  [ShiftType.RequestedEvening]: {
+    label: 'Req E',
+    description: 'Requested evening — fixed',
+    bg: 'bg-violet-100 dark:bg-violet-500/20',
+    color: 'text-violet-900 dark:text-violet-200',
+  },
+  [ShiftType.RequestedNight]: {
+    label: 'Req N',
+    description: 'Requested night — fixed',
+    bg: 'bg-slate-700 dark:bg-slate-600',
+    color: 'text-white dark:text-slate-50',
+  },
+  [ShiftType.RequestedOff]: {
+    label: 'Req Off',
+    description: 'Requested rest day — fixed',
+    bg: 'bg-slate-100 dark:bg-slate-800',
+    color: 'text-slate-500 dark:text-slate-400',
+  },
+  [ShiftType.None]: {
+    label: 'None',
+    description: 'No duty assigned',
+    bg: 'bg-transparent',
+    color: 'text-slate-300 dark:text-slate-700',
   },
 };
 
-/** Fallback for parts of the app that use a default look. */
-export const SHIFT_DETAILS = THEME_SHIFT_STYLES.Professional;
+/** Every shift code, in the order they appear in the picker and the legend. */
+export const ALL_SHIFT_TYPES: ShiftType[] = Object.keys(SHIFT_STYLES) as ShiftType[];
 
-/** Every shift code in display order (matches the original `Object.keys` order). */
-export const ALL_SHIFT_TYPES: ShiftType[] = Object.keys(SHIFT_DETAILS) as ShiftType[];
-
-export const THEMES: ThemeType[] = ['Professional', 'Colorful', 'Attractive', 'Day', 'Night'];
+export const THEMES: ThemeType[] = ['Light', 'Dark'];

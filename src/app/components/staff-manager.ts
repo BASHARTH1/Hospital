@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { MONTHS } from '../constants';
-import { RosterConfig, StaffMember, ThemeType, isHaStaff, pad2 } from '../models/types';
+import { RosterConfig, StaffMember, isHaStaff, pad2 } from '../models/types';
 import { EditableIdInput } from '../ui/editable-id-input';
 import { Icon } from '../ui/icon';
 
@@ -13,7 +13,6 @@ import { Icon } from '../ui/icon';
 export class StaffManager {
   readonly staff = input.required<StaffMember[]>();
   readonly config = input.required<RosterConfig>();
-  readonly theme = input<ThemeType>('Professional');
 
   readonly add = output<void>();
   readonly addHa = output<void>();
@@ -39,10 +38,16 @@ export class StaffManager {
   });
 
   readonly daysInMonth = computed(() => new Date(this.config().year, this.monthIdx() + 1, 0).getDate());
-
   readonly dayNumbers = computed(() => Array.from({ length: this.daysInMonth() }, (_, i) => i + 1));
-
   readonly primaryStaff = computed(() => this.staff().filter((s) => !s.isCounterPart));
+
+  /** Head-count split shown as summary chips above the table. */
+  readonly counts = computed(() => {
+    const staff = this.staff();
+    const counterparts = staff.filter((s) => s.isCounterPart).length;
+    const ha = staff.filter((s) => !s.isCounterPart && isHaStaff(s.name)).length;
+    return { total: staff.length, regular: staff.length - counterparts - ha, ha, counterparts };
+  });
 
   isHa(name: string): boolean {
     return isHaStaff(name);
@@ -123,85 +128,4 @@ export class StaffManager {
     const dateStr = `${this.config().year}-${pad2(this.monthIdx() + 1)}-${pad2(dayNum)}`;
     this.patch(member.id, { [key]: dateStr } as Partial<StaffMember>);
   }
-
-  // ---- Theme-derived classes for the explanation panel ----
-
-  readonly isNight = computed(() => this.theme() === 'Night');
-
-  readonly panelBgClass = computed(() => {
-    switch (this.theme()) {
-      case 'Night':
-        return 'bg-slate-800/40 border-slate-700/60';
-      case 'Day':
-        return 'bg-yellow-50 border-amber-200/80';
-      case 'Colorful':
-        return 'bg-emerald-50 border-emerald-200/80';
-      case 'Attractive':
-        return 'bg-indigo-50/50 border-indigo-100/80';
-      default:
-        return 'bg-slate-50 border-slate-200/80';
-    }
-  });
-
-  readonly cardBgClass = computed(() =>
-    this.isNight() ? 'bg-[#1a212d] border-slate-800' : 'bg-white border-slate-100',
-  );
-
-  readonly titleColor = computed(() => {
-    switch (this.theme()) {
-      case 'Night':
-        return 'text-white';
-      case 'Day':
-        return 'text-amber-900';
-      case 'Colorful':
-        return 'text-emerald-900';
-      case 'Attractive':
-        return 'text-indigo-950';
-      default:
-        return 'text-slate-800';
-    }
-  });
-
-  readonly descColor = computed(() => {
-    switch (this.theme()) {
-      case 'Night':
-        return 'text-slate-400';
-      case 'Day':
-        return 'text-amber-800/80';
-      case 'Colorful':
-        return 'text-emerald-800/80';
-      case 'Attractive':
-        return 'text-indigo-900/80';
-      default:
-        return 'text-slate-600';
-    }
-  });
-
-  readonly listColor = computed(() => {
-    switch (this.theme()) {
-      case 'Night':
-        return 'text-slate-300';
-      case 'Day':
-        return 'text-amber-900/90';
-      case 'Colorful':
-        return 'text-emerald-900/90';
-      case 'Attractive':
-        return 'text-indigo-950/90';
-      default:
-        return 'text-slate-600';
-    }
-  });
-
-  readonly iconBgRegular = computed(() =>
-    this.isNight() ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600',
-  );
-  readonly iconBgHa = computed(() =>
-    this.isNight() ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600',
-  );
-  readonly iconBgCp = computed(() =>
-    this.isNight() ? 'bg-violet-900/30 text-violet-400' : 'bg-violet-50 text-violet-600',
-  );
-  readonly codeClass = computed(() =>
-    this.isNight() ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700',
-  );
 }

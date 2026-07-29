@@ -1,223 +1,128 @@
-<div class="space-y-6">
-  <!-- Header and main actions bar -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print pb-4 border-b border-gray-200/50">
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="no-print flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <button
-        type="button"
-        (click)="back.emit()"
-        class="flex items-center gap-1.5 text-xs font-black text-gray-500 hover:text-gray-800 transition uppercase mb-1"
-      >
-        <app-icon name="ChevronLeft" [size]="14" />
-        Back to Table Grid
+      <button type="button" (click)="back.emit()" class="btn-ghost btn-sm -ml-2 mb-1">
+        <app-icon name="ChevronLeft" [size]="14" /> Back to grid
       </button>
-      <h2 class="text-xl font-black flex items-center gap-2 text-gray-800">
-        <span class="p-1 bg-amber-500 text-white rounded-lg flex items-center justify-center">
-          <app-icon name="Plus" [size]="16" class="rotate-45" />
-        </span>
-        Staff Duty Cards
-      </h2>
-      <p class="text-xs text-gray-500 font-medium">
-        Generate, customize, and print high-fidelity individual calendar cards
+      <h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Staff duty cards</h1>
+      <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        Pocket-sized monthly calendar for each member.
       </p>
     </div>
-    <div class="flex gap-2 w-full sm:w-auto">
-      <button
-        type="button"
-        (click)="print()"
-        [disabled]="staffToRender().length === 0"
-        class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-black text-xs shadow-md uppercase tracking-wider"
-        [class.opacity-50]="staffToRender().length === 0"
-        [class.cursor-not-allowed]="staffToRender().length === 0"
-      >
-        <app-icon name="Printer" [size]="14" />
-        Print Cards ({{ staffToRender().length }})
-      </button>
-    </div>
+    <button
+      type="button"
+      (click)="print()"
+      [disabled]="staffToRender().length === 0"
+      class="btn-primary"
+    >
+      <app-icon name="Printer" [size]="15" /> Print {{ staffToRender().length }} card{{ staffToRender().length === 1 ? '' : 's' }}
+    </button>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 no-print">
-    <!-- Left column: selection controls & settings -->
-    <div class="lg:col-span-1 space-y-6">
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-600">
-          <app-icon name="Settings" [size]="14" />
-          Card Settings
-        </h3>
-
-        <div class="space-y-3">
+  <div class="no-print grid grid-cols-1 gap-4 lg:grid-cols-4">
+    <!-- Controls -->
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Card settings</h2></div>
+        <div class="card-body space-y-3">
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Roster Code (Top-Right)</label>
-            <input
-              type="text"
-              maxlength="12"
-              [value]="rosterTitle()"
-              (input)="rosterTitle.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="e.g. 208CCU"
-            />
+            <label for="roster-code" class="label">Roster code</label>
+            <input id="roster-code" type="text" maxlength="12" [value]="rosterTitle()"
+              (input)="rosterTitle.set($any($event.target).value)" class="input input-sm" placeholder="e.g. 208CCU" />
           </div>
-
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Footer Text</label>
-            <input
-              type="text"
-              maxlength="40"
-              [value]="footerText()"
-              (input)="footerText.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="e.g. Done By 208 CCU"
-            />
+            <label for="footer-text" class="label">Footer text</label>
+            <input id="footer-text" type="text" maxlength="40" [value]="footerText()"
+              (input)="footerText.set($any($event.target).value)" class="input input-sm" placeholder="e.g. Done by 208 CCU" />
           </div>
-
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Color Theme</label>
-            <select
-              [value]="colorMode()"
-              (change)="colorMode.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="ClassicRetro">High-Contrast B&amp;W (Retro)</option>
-              <option value="AppTheme">Current App Theme ({{ appTheme() }})</option>
+            <label for="card-colours" class="label">Colours</label>
+            <select id="card-colours" (change)="colorMode.set($any($event.target).value)" class="input input-sm">
+              <option value="ClassicRetro" [selected]="colorMode() === 'ClassicRetro'">High-contrast black &amp; white</option>
+              <option value="AppTheme" [selected]="colorMode() === 'AppTheme'">Match app theme</option>
             </select>
           </div>
-
           <div>
-            <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Print Layout Paging</label>
-            <select
-              [value]="cardsPerPage()"
-              (change)="cardsPerPage.set($any($event.target).value)"
-              class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="1">1 Card per Page (A4 Portrait)</option>
-              <option value="2">2 Cards per Page (A4 Portrait)</option>
-              <option value="continuous">Continuous Flow (Grid)</option>
+            <label for="cards-per-page" class="label">Cards per page</label>
+            <select id="cards-per-page" (change)="cardsPerPage.set($any($event.target).value)" class="input input-sm">
+              <option value="1" [selected]="cardsPerPage() === '1'">1 per page (A4 portrait)</option>
+              <option value="2" [selected]="cardsPerPage() === '2'">2 per page (A4 portrait)</option>
+              <option value="continuous" [selected]="cardsPerPage() === 'continuous'">Continuous grid</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- Staff filtering & selection -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-        <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center justify-between">
-          <span class="flex items-center gap-1.5 text-emerald-600">
-            <app-icon name="Users" [size]="14" />
-            Staff Members
-          </span>
-          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black">
-            {{ selectedStaffIds().length }} Selected
-          </span>
-        </h3>
-
-        <div class="grid grid-cols-2 gap-1.5">
-          <button
-            type="button"
-            (click)="selectAll()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            (click)="selectNone()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase"
-          >
-            None
-          </button>
-          <button
-            type="button"
-            (click)="selectSeniors()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-indigo-600"
-          >
-            Seniors
-          </button>
-          <button
-            type="button"
-            (click)="selectJuniors()"
-            class="py-1 px-2 text-[10px] font-black border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase text-amber-600"
-          >
-            Juniors
-          </button>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Staff</h2>
+          <span class="text-xs text-slate-500 dark:text-slate-400">{{ selectedStaffIds().length }} selected</span>
         </div>
-
-        <div class="relative">
-          <input
-            type="text"
-            placeholder="Search staff..."
-            [value]="searchQuery()"
-            (input)="searchQuery.set($any($event.target).value)"
-            class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-400 outline-none"
-          />
-          <span class="absolute left-2.5 top-2.5 text-gray-400">
-            <app-icon name="Users" [size]="12" />
-          </span>
-        </div>
-
-        <div class="max-h-[220px] overflow-y-auto space-y-1.5 pr-1">
-          @if (filteredStaff().length === 0) {
-            <p class="text-[10px] text-gray-400 text-center py-4 font-bold">No matching staff found</p>
-          } @else {
-            @for (member of filteredStaff(); track member.id) {
-              <button
-                type="button"
-                (click)="toggleStaffSelection(member.id)"
-                class="w-full flex items-center justify-between p-2 rounded-xl text-left border transition-all text-xs font-bold"
-                [class]="
-                  isChecked(member.id)
-                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 shadow-sm'
-                    : 'bg-white border-gray-100 hover:bg-gray-50 text-gray-600'
-                "
-              >
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full" [class]="member.isSenior ? 'bg-indigo-500' : 'bg-amber-500'"></span>
-                  <span>{{ member.name || 'Staff ' + member.id }}</span>
-                </div>
-                <span class="text-[9px] text-gray-400 uppercase font-black tracking-tighter">{{ member.id }}</span>
-              </button>
-            }
-          }
-        </div>
-      </div>
-    </div>
-
-    <!-- Right column: interactive card grid -->
-    <div class="lg:col-span-3 space-y-6">
-      @if (staffToRender().length === 0) {
-        <div class="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-gray-200 text-center space-y-4">
-          <div class="p-3 bg-rose-50 text-rose-500 rounded-full animate-bounce">
-            <app-icon name="Users" [size]="32" />
+        <div class="card-body space-y-3">
+          <div class="grid grid-cols-4 gap-1">
+            <button type="button" (click)="selectAll()" class="btn-secondary btn-sm px-1">All</button>
+            <button type="button" (click)="selectNone()" class="btn-secondary btn-sm px-1">None</button>
+            <button type="button" (click)="selectSeniors()" class="btn-secondary btn-sm px-1">Senior</button>
+            <button type="button" (click)="selectJuniors()" class="btn-secondary btn-sm px-1">Junior</button>
           </div>
-          <div class="space-y-1">
-            <h4 class="font-black text-gray-800 text-sm">No Staff Selected</h4>
-            <p class="text-xs text-gray-400 max-w-sm">
-              Please select at least one staff member from the left sidebar to generate their roster cards.
-            </p>
-          </div>
-          <button
-            type="button"
-            (click)="selectAll()"
-            class="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-black text-xs uppercase"
-          >
-            Select All Staff
-          </button>
-        </div>
-      } @else {
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
-          @for (member of staffToRender(); track member.id) {
-            <div
-              class="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm relative hover:shadow-md transition-shadow w-full max-w-[264px] flex flex-col items-center"
-            >
-              <div class="absolute top-2.5 right-2.5 flex gap-1.5 no-print z-20">
+
+          <input type="text" placeholder="Search staff…" [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)" class="input input-sm" aria-label="Search staff" />
+
+          <div class="max-h-64 space-y-1 overflow-y-auto pr-1">
+            @if (filteredStaff().length === 0) {
+              <p class="py-4 text-center text-xs text-slate-400 dark:text-slate-500">No matching staff</p>
+            } @else {
+              @for (member of filteredStaff(); track member.id) {
                 <button
                   type="button"
                   (click)="toggleStaffSelection(member.id)"
-                  class="p-1.5 bg-gray-50 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition border border-gray-100"
-                  title="Hide Card"
+                  class="flex w-full items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors"
+                  [class]="
+                    isChecked(member.id)
+                      ? 'border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200'
+                      : 'border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'
+                  "
+                  [attr.aria-pressed]="isChecked(member.id)"
                 >
-                  <app-icon name="Trash2" [size]="12" />
+                  <span class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full" [class]="member.isSenior ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-600'"></span>
+                    <span class="font-medium">{{ member.name || 'Staff ' + member.id }}</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400 dark:text-slate-500">{{ member.id }}</span>
                 </button>
-              </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
 
-              <div class="print-card-item pt-4 w-full flex justify-center">
+    <!-- Preview -->
+    <div class="lg:col-span-3">
+      @if (staffToRender().length === 0) {
+        <div class="card flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <app-icon name="Users" [size]="28" class="text-slate-300 dark:text-slate-600" />
+          <div>
+            <p class="text-sm font-medium text-slate-700 dark:text-slate-200">No staff selected</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Pick at least one member to generate cards.</p>
+          </div>
+          <button type="button" (click)="selectAll()" class="btn-secondary btn-sm">Select all</button>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          @for (member of staffToRender(); track member.id) {
+            <div class="card relative flex w-full max-w-[268px] flex-col items-center p-3">
+              <button
+                type="button"
+                (click)="toggleStaffSelection(member.id)"
+                class="btn-icon absolute right-2 top-2 z-10 hover:text-rose-600"
+                [attr.aria-label]="'Hide card for ' + (member.name || member.id)"
+              >
+                <app-icon name="Trash2" [size]="13" />
+              </button>
+              <div class="print-card-item flex w-full justify-center pt-4">
                 <app-staff-card
                   [member]="member"
                   [config]="config()"
@@ -226,7 +131,6 @@
                   [rosterTitle]="rosterTitle()"
                   [footerText]="footerText()"
                   [colorMode]="colorMode()"
-                  [appTheme]="appTheme()"
                 />
               </div>
             </div>
@@ -236,8 +140,8 @@
     </div>
   </div>
 
-  <!-- Printable area: hidden on screen, shown strictly during printing -->
-  <div class="hidden print:block print-cards-container">
+  <!-- Print-only output -->
+  <div class="hidden print-cards-container print:block">
     @for (member of staffToRender(); track member.id) {
       <div class="print-card-item">
         <app-staff-card
@@ -248,7 +152,6 @@
           [rosterTitle]="rosterTitle()"
           [footerText]="footerText()"
           [colorMode]="colorMode()"
-          [appTheme]="appTheme()"
         />
       </div>
     }

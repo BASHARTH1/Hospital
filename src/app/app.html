@@ -1,70 +1,69 @@
-<div
-  class="w-full min-h-screen max-w-[100vw] mx-auto px-2 sm:px-4 py-8 overflow-x-hidden transition-all duration-500 print:bg-white print:text-black print:p-0 print:m-0 print:min-h-0"
-  [class]="themeClasses()"
->
-  <header class="flex flex-col items-center mb-8 no-print gap-4">
-    <div class="text-center">
-      <h1 class="text-4xl font-black mb-2 tracking-tight transition-all duration-500" [class]="titleClass()">
-        AI Staff Roster Manager
-      </h1>
-      <p class="font-medium" [class]="isNight() ? 'text-slate-500' : 'text-gray-500'">
-        Intelligent duty scheduling for 3-shift operations
-      </p>
-    </div>
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 print:bg-white">
+  <!-- Application bar: identity, current period, theme, and the section tabs -->
+  <header
+    class="no-print sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur
+      dark:border-slate-800 dark:bg-slate-900/90"
+  >
+    <div class="mx-auto flex h-14 max-w-[1800px] items-center gap-3 px-4 sm:px-6">
+      <div class="flex items-center gap-2.5">
+        <span
+          class="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 text-white shadow-sm"
+          aria-hidden="true"
+        >
+          <app-icon name="Activity" [size]="18" />
+        </span>
+        <span class="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          Roster Manager
+        </span>
+      </div>
 
-    <!-- Theme selector -->
-    <div
-      class="flex p-1 rounded-full items-center gap-1 border transition-colors duration-500"
-      [class]="isNight() ? 'bg-slate-800 border-slate-700' : 'bg-gray-200/50 border-gray-200'"
-    >
-      <div class="px-3 py-1 text-[10px] font-black uppercase text-gray-400">Theme:</div>
-      @for (t of themes; track t) {
+      <span class="hidden h-5 w-px bg-slate-200 dark:bg-slate-700 sm:block" aria-hidden="true"></span>
+
+      <p class="hidden truncate text-sm text-slate-500 dark:text-slate-400 sm:block">
+        {{ contextLabel() }}
+      </p>
+
+      <div class="ml-auto flex items-center gap-1">
         <button
           type="button"
-          (click)="store.setTheme(t)"
-          class="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
-          [class]="
-            store.theme() === t
-              ? isNight()
-                ? 'bg-slate-700 text-cyan-400 shadow-sm'
-                : 'bg-white text-blue-600 shadow-sm'
-              : isNight()
-                ? 'text-slate-500 hover:text-slate-300'
-                : 'text-gray-500 hover:text-gray-700'
-          "
+          (click)="toggleTheme()"
+          class="btn-icon"
+          [attr.aria-label]="isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
+          [title]="isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
         >
-          {{ t }}
+          <app-icon [name]="isDark() ? 'Sun' : 'Moon'" [size]="18" />
         </button>
-      }
+      </div>
     </div>
+
+    <nav class="mx-auto max-w-[1800px] px-4 sm:px-6" aria-label="Sections">
+      <div class="-mb-px flex gap-1 overflow-x-auto">
+        @for (tab of tabs; track tab.id) {
+          <button
+            type="button"
+            (click)="store.setActiveTab(tab.id)"
+            class="flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors"
+            [class]="
+              store.activeTab() === tab.id
+                ? 'border-brand-600 text-brand-700 dark:border-brand-500 dark:text-brand-400'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-200'
+            "
+            [attr.aria-current]="store.activeTab() === tab.id ? 'page' : null"
+          >
+            <app-icon [name]="tab.icon" [size]="16" />
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+    </nav>
   </header>
 
-  <nav class="flex justify-center mb-8 no-print">
-    <div class="p-1 flex space-x-1 w-full xl:w-5/6 transition-all duration-500" [class]="navBarClass()">
-      @for (tab of tabs; track tab.id) {
-        <button
-          type="button"
-          (click)="store.setActiveTab(tab.id)"
-          class="flex-1 flex items-center justify-center gap-2 py-2.5 px-1 sm:px-4 transition-all text-xs sm:text-sm"
-          [class]="tabShapeClass() + ' ' + (store.activeTab() === tab.id ? activeTabClass() : inactiveTabClass())"
-        >
-          <app-icon [name]="tab.icon" [size]="18" />
-          <span class="hidden sm:inline">{{ tab.label }}</span>
-        </button>
-      }
-    </div>
-  </nav>
-
-  <main
-    class="min-h-[600px] w-full mx-auto transition-all duration-700 print:bg-transparent print:shadow-none print:border-none print:p-0 print:min-h-0"
-    [class]="containerClasses()"
-  >
+  <main class="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 print:max-w-none print:p-0">
     @switch (store.activeTab()) {
       @case ('Staff') {
         <app-staff-manager
           [staff]="store.staff()"
           [config]="store.config()"
-          [theme]="store.theme()"
           (add)="store.addStaff()"
           (addHa)="store.addHaStaff()"
           (addCounterPart)="store.addCounterPartStaff()"
@@ -87,7 +86,6 @@
           [staff]="store.staff()"
           [config]="store.config()"
           [assignments]="store.resolvedAssignments()"
-          [theme]="store.theme()"
           (updateAssignment)="store.updateAssignment($event.staffId, $event.date, $event.shift)"
           (updateBatch)="store.updateAssignmentsBatch($event)"
           (exportCsv)="store.exportAssignments()"
@@ -108,7 +106,6 @@
           [staff]="store.staff()"
           [config]="store.config()"
           [assignments]="store.resolvedAssignments()"
-          [theme]="store.theme()"
           (exportCsv)="store.exportAssignments()"
           (configChange)="store.setConfig($event)"
         />

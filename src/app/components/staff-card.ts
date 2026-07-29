@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { THEME_SHIFT_STYLES } from '../constants';
-import { Assignment, RosterConfig, ShiftType, StaffMember, ThemeType, isHaStaff } from '../models/types';
+import { SHIFT_STYLES } from '../constants';
+import { Assignment, RosterConfig, ShiftType, StaffMember, isHaStaff } from '../models/types';
 
 export type CardColorMode = 'ClassicRetro' | 'AppTheme';
 
@@ -108,24 +108,22 @@ export class StaffCard {
   readonly rosterTitle = input('');
   readonly footerText = input('');
   readonly colorMode = input<CardColorMode>('ClassicRetro');
-  readonly appTheme = input<ThemeType>('Professional');
 
   readonly isRetro = computed(() => this.colorMode() === 'ClassicRetro');
   readonly isHa = computed(() => isHaStaff(this.member().name));
   readonly shortMonthName = computed(() => this.config().month.substring(0, 3));
 
-  readonly outerBorderClass = computed(() => {
-    if (this.isRetro()) return 'border-[3px] border-black bg-white text-black rounded-xl shadow-none';
-    return this.appTheme() === 'Night'
-      ? 'border border-slate-700 bg-slate-950 text-slate-100 shadow-md rounded-2xl'
-      : 'border border-slate-200 bg-white text-slate-800 shadow-md rounded-2xl';
-  });
+  readonly outerBorderClass = computed(() =>
+    this.isRetro()
+      ? 'rounded-md border-2 border-black bg-white text-black'
+      : 'rounded-md border border-slate-200 bg-white text-slate-800 shadow-card dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100',
+  );
 
   readonly cells = computed<RenderedCell[]>(() => {
     const isRetro = this.isRetro();
     const config = this.config();
     const memberId = this.member().id;
-    const themeStyles = THEME_SHIFT_STYLES[this.appTheme()];
+    const themeStyles = SHIFT_STYLES;
 
     const shiftByDate = new Map<string, ShiftType>();
     for (const a of this.assignments()) {

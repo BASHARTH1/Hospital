@@ -53,7 +53,7 @@ work offline.
 | Concern | Location |
 | --- | --- |
 | Domain types, `ShiftType` enum, HA/date helpers | `src/app/models/types.ts` |
-| Months, years, per-theme shift palettes | `src/app/constants.ts` |
+| Months, years, shift palette (`SHIFT_STYLES`) | `src/app/constants.ts` |
 | App state (staff, config, assignments, theme, tab) | `src/app/services/roster-store.ts` |
 | Local rule-based scheduler | `src/app/services/roster-scheduler.ts` |
 | Gemini roster generation (optional) | `src/app/services/gemini.service.ts` |
@@ -67,13 +67,25 @@ standalone, `OnPush`, and use signal `input()`/`output()`. The app runs **zonele
 `resolvedAssignments` is a computed signal that layers counterpart (mirrored) duties on
 top of the real assignments — exactly what the React `useMemo` did.
 
+## Design system
+
+The UI is built from a small set of component classes defined in `src/styles.css`
+(`.btn-*`, `.card*`, `.input`, `.label`, `.th`, `.badge`) on top of a single `brand`
+accent declared in `tailwind.config.js`. Colour elsewhere is reserved for meaning:
+sky = morning, violet = evening, slate = night, rose = leave or shortfall,
+amber = holiday or weekend, emerald = HA staff, violet = counterpart.
+
+Light and dark are the two themes. Theming is one `dark` class on `<html>`, toggled by
+`RosterStore`, so components use Tailwind `dark:` variants rather than passing a theme
+down as an input. The choice persists in `localStorage` and defaults to the OS setting.
+`RosterStore` also drops the class on `beforeprint`, so printouts are always light.
+
 ## Notable porting decisions
 
 - **Tailwind is compiled at build time** (v3.4, matching what the original loaded from the
   Play CDN) rather than pulled from `cdn.tailwindcss.com`. `tailwind.config.js` scans
-  `src/**/*.{html,ts}` — the theme maps (`THEME_SHIFT_STYLES`, the per-view `THEME_CONFIGS`,
-  the class helpers on each component) are plain string literals, so the extractor finds
-  them without a safelist. It does apply one `transform`, to unwrap Angular's
+  `src/**/*.{html,ts}` — `SHIFT_STYLES` and the per-view `THEME_CONFIGS` maps are plain
+  string literals, so the extractor finds them without a safelist. It does apply one `transform`, to unwrap Angular's
   `[class.bg-rose-950/30]="expr"` bindings, which the default extractor would otherwise
   read as a single unusable token.
 - **`lucide-react` was dropped.** `src/app/ui/icon.ts` renders the same 17 glyphs as
