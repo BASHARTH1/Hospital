@@ -59,9 +59,12 @@ async function requireAdmin(request: Request, admin: SupabaseClient): Promise<Re
   return null;
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') return json(405, { error: 'Use POST.' });
+/** Anything other than POST is a mistake; say so rather than 404-ing. */
+export function GET(): Response {
+  return json(405, { error: 'Use POST.' });
+}
 
+export async function POST(request: Request): Promise<Response> {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
