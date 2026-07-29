@@ -3,6 +3,34 @@
 An Angular 22 port of the React/Vite `ai-staff-roster-manager` app — intelligent duty
 scheduling for 3-shift hospital operations.
 
+## Accounts and access
+
+Two roles:
+
+- **admin** — creates wards, issues head-of-roster accounts, assigns wards, and can open
+  any ward's roster.
+- **head** — manages the staff, rules and duties of the ward(s) assigned to them, and
+  sees nothing else.
+
+Everything is enforced by row-level security in Postgres (`supabase/migrations/`), because
+the browser only ever holds the publishable key. Column-level rules that RLS cannot
+express — a head changing their own role, or reassigning a ward — are blocked by triggers.
+
+### One-time setup
+
+Creating and deleting accounts needs the Supabase **service role** key, which must never
+reach the browser. It lives only in the deployment environment, used by
+`api/admin-users.ts`, which checks the caller is an administrator before doing anything.
+
+```bash
+vercel env add SUPABASE_SERVICE_ROLE_KEY production   # paste from Supabase → Settings → API
+vercel deploy --prod
+```
+
+Until that is set, the admin console can still create wards, but creating accounts returns
+a clear "not configured" message. Also turn **off** "Allow new users to sign up" in
+Supabase → Authentication → Providers → Email, so accounts can only be issued by an admin.
+
 ## Running
 
 ```bash
@@ -55,10 +83,18 @@ work offline.
 | Domain types, `ShiftType` enum, HA/date helpers | `src/app/models/types.ts` |
 | Months, years, shift palette (`SHIFT_STYLES`) | `src/app/constants.ts` |
 | App state (staff, config, assignments, theme, tab) | `src/app/services/roster-store.ts` |
+| Authentication and profile | `src/app/services/auth.service.ts` |
+| Ward-scoped reads and writes | `src/app/services/roster-data.service.ts` |
 | Local rule-based scheduler | `src/app/services/roster-scheduler.ts` |
 | Gemini roster generation (optional) | `src/app/services/gemini.service.ts` |
 | Feature components | `src/app/components/` |
 | Icons, editable-ID field, dynamic `<style>` helper | `src/app/ui/` |
+
+Roster data lives in Supabase, one row set per ward. `RosterDataService` owns the mapping
+between the app's human staff codes (`S001`) and the database uuids, so the screens work
+unchanged. `RosterStore` applies each edit to its signals immediately and queues the
+matching write; writes run through one serial chain so a staff insert always lands before
+an assignment that references it.
 
 State lives in a single `RosterStore` (`providedIn: 'root'`) built on signals — the
 Angular equivalent of the `useState` cluster in the original `App.tsx`. Components are

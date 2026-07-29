@@ -64,14 +64,17 @@ export function GET(): Response {
   return json(405, { error: 'Use POST.' });
 }
 
+/** The project URL is not a secret, so only the service key has to be supplied. */
+const DEFAULT_SUPABASE_URL = 'https://hvybromvtvosokqqqhdp.supabase.co';
+
 export async function POST(request: Request): Promise<Response> {
-  const url = process.env.SUPABASE_URL;
+  const url = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
+  if (!serviceKey) {
     return json(503, {
       error:
-        'Account management is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY ' +
-        'on the deployment, then redeploy.',
+        'Account management is not configured yet. Add SUPABASE_SERVICE_ROLE_KEY to this ' +
+        'deployment (vercel env add SUPABASE_SERVICE_ROLE_KEY production) and redeploy.',
     });
   }
 
