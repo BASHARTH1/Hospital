@@ -127,7 +127,18 @@ export class AuthService {
         body: JSON.stringify(body),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) return { error: payload.error || `Request failed (${res.status}).` };
+      if (!res.ok) {
+        // The /api function only exists on the deployed site; `ng serve` has no
+        // server side, so this is the usual result of testing locally.
+        if (res.status === 404) {
+          return {
+            error:
+              'Account management is not available on the local development server. ' +
+              'Use the deployed site, or run "vercel dev" instead of "ng serve".',
+          };
+        }
+        return { error: payload.error || `Request failed (${res.status}).` };
+      }
       return { data: payload as T };
     } catch (err) {
       return { error: (err as Error).message || 'Network error.' };
